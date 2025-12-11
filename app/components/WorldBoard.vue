@@ -14,7 +14,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'square-click': [square: Square];
+  'square-click': [squareId: string];
 }>();
 
 const squares = ref<Square[]>(props.boardData);
@@ -27,7 +27,7 @@ function getSquareColor(square: Square): string {
   }
 
   // Different colors for different players
-  const colors = ['lightblue', 'lightgreen', 'lightcoral', 'lightyellow', 'lightpink'];
+  const colors = ['hsl(220 70% 50%)','hsl(160 60% 45%)','hsl(30 80% 55%)','hsl(280 65% 60%)','hsl(340 75% 55%)'];
   const hash = square.ownerId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[hash % colors.length] ?? 'white';
 }
@@ -37,8 +37,11 @@ const isProcessing = ref(false);
 const errorMessage = ref('');
 
 function handleSquareClick(square: Square){
-  emit('square-click', square);
+  emit('square-click', square.id);
 }
+
+const squareSize = 100;
+const squareBorder = 10;
 </script>
 
 <template>
@@ -50,22 +53,39 @@ function handleSquareClick(square: Square){
 
     <!-- Board -->
     <div style="position: relative;">
-      <svg :width="worldData.boardSize * 50" :height="worldData.boardSize * 50">
-        <rect
-          v-for="square in squares"
-          :key="square.id"
-          :x="(square.x - 1) * 50"
-          :y="(square.y - 1) * 50"
-          width="50"
-          height="50"
-          stroke="black"
-          :fill="getSquareColor(square)"
-          @click="handleSquareClick(square)"
-          :style="{
-            cursor: isProcessing ? 'wait' : 'pointer',
-            opacity: isProcessing ? 0.5 : 1
-          }"
-        />
+      <svg :width="(worldData.boardSize * squareSize)+squareBorder" :height="(worldData.boardSize * squareSize)+squareBorder" class="fill-current mb-4">
+        <template
+            v-for="square in squares"
+            :key="square.id"
+        >
+          <rect
+            class="square"
+            :x="((square.x - 1) * squareSize)+squareBorder"
+            :y="((square.y - 1) * squareSize)+squareBorder"
+            :width="squareSize - squareBorder"
+            :height="squareSize - squareBorder"
+            stroke="black"
+            :stroke-width="squareBorder"
+            :fill="getSquareColor(square)"
+            @click="handleSquareClick(square)"
+            :style="{
+              cursor: isProcessing ? 'wait' : 'pointer',
+              opacity: isProcessing ? 0.5 : 1
+            }"
+          />
+          <!-- Defense bonus indicator -->
+          <rect
+            v-if="square.defenseBonus === 1"
+            :x="((square.x - 1) * squareSize) + squareBorder + (squareSize - squareBorder) / 4"
+            :y="((square.y - 1) * squareSize) + squareBorder + (squareSize - squareBorder) / 4"
+            :width="(squareSize - squareBorder) / 2"
+            :height="(squareSize - squareBorder) / 2"
+            fill="rgba(0, 0, 0, 0.3)"
+            stroke="black"
+            :stroke-width="2"
+            pointer-events="none"
+          />
+        </template>
       </svg>
 
       <!-- Loading overlay -->
@@ -88,12 +108,8 @@ function handleSquareClick(square: Square){
 </template>
 
 <style scoped>
-svg {
-  border: 2px solid black;
-}
-
-rect:hover {
-  stroke-width: 3;
-  stroke: #ff6b6b;
+.square:hover {
+  stroke-width: v-bind(squareBorder);
+  stroke: #e0234a;
 }
 </style>

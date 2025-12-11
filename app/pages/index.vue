@@ -6,7 +6,7 @@ const worldData = ref<World>({
   slug: 'kos',
   name: 'Kos',
   ownerId: 'Saitty',
-  boardSize: 2,
+  boardSize: 3,
   maxPlayers: 5,
   createdAt: ''
 });
@@ -31,22 +31,63 @@ const squares = ref<Square[]>([
   {
     id: '3',
     worldSlug: 'kos',
-    x: 1,
-    y: 2,
+    x: 3,
+    y: 1,
     ownerId: null,
     defenseBonus: 0
   },
   {
     id: '4',
     worldSlug: 'kos',
+    x: 1,
+    y: 2,
+    ownerId: null,
+    defenseBonus: 0
+  },
+  {
+    id: '5',
+    worldSlug: 'kos',
     x: 2,
     y: 2,
+    ownerId: null,
+    defenseBonus: 0
+  },
+  {
+    id: '6',
+    worldSlug: 'kos',
+    x: 3,
+    y: 2,
+    ownerId: null,
+    defenseBonus: 0
+  },
+  {
+    id: '7',
+    worldSlug: 'kos',
+    x: 1,
+    y: 3,
+    ownerId: null,
+    defenseBonus: 0
+  },
+  {
+    id: '8',
+    worldSlug: 'kos',
+    x: 2,
+    y: 3,
+    ownerId: null,
+    defenseBonus: 0
+  },
+  {
+    id: '9',
+    worldSlug: 'kos',
+    x: 3,
+    y: 3,
     ownerId: null,
     defenseBonus: 0
   }
 ])
 
-const currentPlayerId = ref<String>('Saitty');
+const players = ['Alice', 'Bob', 'Charlie', 'Diana'];
+const currentPlayerId = ref<string>(players[0]!);
 const config = useRuntimeConfig()
 const isResetting = ref(false);
 const resetError = ref('');
@@ -54,49 +95,94 @@ const isProcessing = ref(false);
 const errorMessage = ref('');
 
 // Get stats
-// const stats = computed(() => ({
-//   total: squares.value.length,
-//   owned: squares.value.filter(s => s.ownerId).length,
-//   empty: squares.value.filter(s => !s.ownerId).length,
-//   mineCount: squares.value.filter(s => s.ownerId === currentPlayerId.value).length,
-// }));
+const stats = computed(() => ({
+  total: squares.value.length,
+  owned: squares.value.filter(s => s.ownerId).length,
+  empty: squares.value.filter(s => !s.ownerId).length,
+  mineCount: squares.value.filter(s => s.ownerId === currentPlayerId.value).length,
+  winningPlayer: (() => {
+    const counts: Record<string, number> = {};
+    squares.value.forEach(s => {
+      if (s.ownerId) {
+        counts[s.ownerId] = (counts[s.ownerId] || 0) + 1;
+      }
+    });
+    let maxCount = 0;
+    let winner = null;
+    for (const playerId in counts) {
+      if (counts[playerId]! > maxCount) {
+        maxCount = counts[playerId]!;
+        winner = playerId;
+      }
+    }
+    return winner;
+  })()
+}));
 
 async function resetBoard() {
-  if (!confirm('Are you sure you want to reset the board? All progress will be lost!')) {
+  // if (!confirm('Are you sure you want to reset the board? All progress will be lost!')) {
+  //   return;
+  // }
+
+  // only restart offline
+  isResetting.value = true;
+  squares.value.forEach(s => {
+    s.ownerId = null;
+    s.defenseBonus = 0;
+  });
+  isResetting.value = false;
+  return;
+
+  // isResetting.value = true;
+  // resetError.value = '';
+  //
+  // try {
+  //   await $fetch(`/api/worlds/${worldData.value.slug}/reset`, {
+  //     method: 'POST',
+  //     baseURL: config.public.apiBase
+  //   });
+  //
+  //
+  //   squares.value = await $fetch<Square[]>(`/api/worlds/${worldData.value.slug}/board`, {
+  //     baseURL: config.public.apiBase
+  //   });
+  // } catch (error: any) {
+  //   console.error('Failed to reset board:', error);
+  //   resetError.value = 'Failed to reset board. Please try again.';
+  // } finally {
+  //   isResetting.value = false;
+  // }
+}
+
+function onSquareClick(squareId: string) {
+  // handleSquareClick(squareId);
+  // Make offline for testing
+  const squareIndex = squares.value.find(s => s.id === squareId);
+
+  if (!squareIndex) { return; }
+
+  if (!squareIndex.ownerId) {
+    squareIndex.ownerId = currentPlayerId.value;
+  } else if (squareIndex.ownerId === currentPlayerId.value) {
+    squareIndex.defenseBonus = 1;
+  } else if (squareIndex.defenseBonus === 1) {
+    squareIndex.defenseBonus = 0;
+  } else {
+    squareIndex.ownerId = currentPlayerId.value;
+  }
+}
+
+async function handleSquareClick(squareId: string) {
+  const square = squares.value.find(s => s.id === squareId);
+
+  if (!square) {
+    errorMessage.value = 'Square not found';
+    setTimeout(() => errorMessage.value = '', 2000);
     return;
   }
 
-  isResetting.value = true;
-  resetError.value = '';
-
-  try {
-    await $fetch(`/api/worlds/${worldData.value.slug}/reset`, {
-      method: 'POST',
-      baseURL: config.public.apiBase
-    });
-
-    const updatedBoard = await $fetch<Square[]>(`/api/worlds/${worldData.value.slug}/board`, {
-      baseURL: config.public.apiBase
-    });
-
-    squares.value = updatedBoard;
-  } catch (error: any) {
-    console.error('Failed to reset board:', error);
-    resetError.value = 'Failed to reset board. Please try again.';
-  } finally {
-    isResetting.value = false;
-  }
-}
-
-function onSquareClick(square: Square) {
-  console.log('Square clicked:', square);
-}
-
-async function handleSquareClick(x: number, y: number) {
-  const square = squares.value.find(s => s.x === x && s.y === y);
-
   // Check if already owned
-  if (square?.ownerId) {
+  if (square.ownerId) {
     errorMessage.value = `Square already owned by ${square.ownerId}`;
     setTimeout(() => errorMessage.value = '', 2000);
     return;
@@ -111,14 +197,14 @@ async function handleSquareClick(x: number, y: number) {
       method: 'POST',
       baseURL: config.public.apiBase,
       body: {
-        x: x,
-        y: y,
+        x: square.x,
+        y: square.y,
         playerId: currentPlayerId.value
       }
     });
 
     // Update local state with new square data
-    const index = squares.value.findIndex(s => s.x === x && s.y === y);
+    const index = squares.value.findIndex(s => s.x === square.x && s.y === square.y);
     if (index !== -1) {
       squares.value[index] = response;
     }
@@ -136,15 +222,26 @@ async function handleSquareClick(x: number, y: number) {
 <template>
   <div class="container rounded-md border border-border bg-card text-card-foreground mt-4 py-4 px-6">
     <label>Player: </label>
-    <input v-model="currentPlayerId" class="bg-input border border-border rounded px-2 py-1" placeholder="Enter your username" />
+<!--    <input v-model="currentPlayerId" class="bg-input border border-border rounded px-2 py-1" placeholder="Enter your username" />-->
+    <form>
+      <label
+          v-for="player in players"
+          :key="player"
+          class="mr-4"
+      >
+        <input v-model="currentPlayerId" type="radio" :id="player" name="player" :value="player" class="mr-1">
+        {{ player }}
+      </label>
+    </form>
       <!-- Stats -->
-    <!-- <div style="margin-top: 20px;">
+    <div style="margin-top: 20px;">
       <h3>Board Stats</h3>
       <p>Total Squares: {{ stats.total }}</p>
       <p>Your Squares: {{ stats.mineCount }}</p>
       <p>Owned by Others: {{ stats.owned - stats.mineCount }}</p>
       <p>Empty Squares: {{ stats.empty }}</p>
-    </div> -->
+      <p>Winning Player: {{ stats.winningPlayer || 'N/A' }}</p>
+    </div>
   </div>
   <div class="container mt-4">
 
@@ -161,16 +258,7 @@ async function handleSquareClick(x: number, y: number) {
     <button
       @click="resetBoard"
       :disabled="isResetting || isProcessing"
-      style="
-      padding: 10px 20px;
-      background-color: #ff4444;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: bold;
-      "
+      class="bg-primary text-primary-foreground rounded-md px-4 py-2 mt-4 hover:bg-primary/80 transition-colors"
       :style="{
         opacity: (isResetting || isProcessing) ? 0.5 : 1,
         cursor: (isResetting || isProcessing) ? 'not-allowed' : 'pointer'
@@ -180,9 +268,3 @@ async function handleSquareClick(x: number, y: number) {
     </button>
   </div>
 </template>
-
-<style scoped>
-button:hover:not(:disabled) {
-  background-color: #cc0000;
-}
-</style>
