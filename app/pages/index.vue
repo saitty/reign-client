@@ -13,8 +13,8 @@ const worldData = ref<World>({
 
 const squares = ref<Square[]>([]);
 // Initialize squares for testing
-for (let x = 0; x <= worldData.value.boardSize; x++) {
-  for (let y = 0; y <= worldData.value.boardSize; y++) {
+for (let x = 0; x < worldData.value.boardSize; x++) {
+  for (let y = 0; y < worldData.value.boardSize; y++) {
     squares.value.push(  {
       id: `${x}-${y}`,
       worldSlug: 'kos',
@@ -160,7 +160,7 @@ async function handleSquareClick(squareId: string) {
 </script>
 
 <template>
-  <div class="container rounded-md border border-border bg-card text-card-foreground mt-4 py-4 px-6">
+  <BaseCard class="container mt-4">
     <label>Player: </label>
 <!--    <input v-model="currentPlayerId" class="bg-input border border-border rounded px-2 py-1" placeholder="Enter your username" />-->
     <form>
@@ -182,7 +182,7 @@ async function handleSquareClick(squareId: string) {
       <p>Empty Squares: {{ stats.empty }}</p>
       <p>Winning Player: {{ stats.winningPlayer || 'N/A' }}</p>
     </div>
-  </div>
+  </BaseCard>
   <div class="container mt-4">
 
     <WorldBoard 

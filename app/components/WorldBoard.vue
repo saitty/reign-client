@@ -60,8 +60,8 @@ const squareBorder = 10;
         >
           <rect
             class="square"
-            :x="((square.x - 1) * squareSize)+squareBorder"
-            :y="((square.y - 1) * squareSize)+squareBorder"
+            :x="((square.x) * squareSize)+squareBorder"
+            :y="((square.y) * squareSize)+squareBorder"
             :width="squareSize - squareBorder"
             :height="squareSize - squareBorder"
             stroke="black"
@@ -76,8 +76,8 @@ const squareBorder = 10;
           <!-- Defense bonus indicator -->
           <rect
             v-if="square.defenseBonus === 1"
-            :x="((square.x - 1) * squareSize) + squareBorder + (squareSize - squareBorder) / 4"
-            :y="((square.y - 1) * squareSize) + squareBorder + (squareSize - squareBorder) / 4"
+            :x="((square.x) * squareSize) + squareBorder + (squareSize - squareBorder) / 4"
+            :y="((square.y) * squareSize) + squareBorder + (squareSize - squareBorder) / 4"
             :width="(squareSize - squareBorder) / 2"
             :height="(squareSize - squareBorder) / 2"
             fill="rgba(0, 0, 0, 0.3)"
