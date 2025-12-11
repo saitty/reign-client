@@ -1,8 +1,13 @@
 import type { Config } from 'tailwindcss'
+import defaultTheme from 'tailwindcss/defaultTheme'
 
 export default {
   content: [],
   theme: {
+    ...defaultTheme,
+    container: {
+      center: true,
+    },
     colors: {
       'background':  'hsl(20 14.3% 4.1%)',
       'foreground':  'hsl(0 0% 95%)',

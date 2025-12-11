@@ -7,7 +7,5 @@ export default defineNuxtConfig({
       apiBase: 'http://localhost:8080'
     }
   },
-  modules: [
-    '@nuxtjs/tailwindcss'
-  ]
+  modules: ['@nuxtjs/tailwindcss', '@nuxt/icon']
 })

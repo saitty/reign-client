@@ -4,7 +4,7 @@
 
 <template>
   <div
-    class="max-w-3xl mx-auto mt-72 p-6 flex flex-col gap-6 rounded-xl border border-secondary py-6 shadow-sm">
+    class="container mt-72 p-6 flex flex-col gap-6 rounded-xl border border-secondary py-6 shadow-sm">
     <h1>hello</h1>
   
     <form>
