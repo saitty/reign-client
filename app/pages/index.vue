@@ -6,85 +6,25 @@ const worldData = ref<World>({
   slug: 'kos',
   name: 'Kos',
   ownerId: 'Saitty',
-  boardSize: 3,
+  boardSize: 5,
   maxPlayers: 5,
   createdAt: ''
 });
 
-const squares = ref<Square[]>([
-  {
-    id: '1',
-    worldSlug: 'kos',
-    x: 1,
-    y: 1,
-    ownerId: null,
-    defenseBonus: 0
-  },
-  {
-    id: '2',
-    worldSlug: 'kos',
-    x: 2,
-    y: 1,
-    ownerId: null,
-    defenseBonus: 0
-  },
-  {
-    id: '3',
-    worldSlug: 'kos',
-    x: 3,
-    y: 1,
-    ownerId: null,
-    defenseBonus: 0
-  },
-  {
-    id: '4',
-    worldSlug: 'kos',
-    x: 1,
-    y: 2,
-    ownerId: null,
-    defenseBonus: 0
-  },
-  {
-    id: '5',
-    worldSlug: 'kos',
-    x: 2,
-    y: 2,
-    ownerId: null,
-    defenseBonus: 0
-  },
-  {
-    id: '6',
-    worldSlug: 'kos',
-    x: 3,
-    y: 2,
-    ownerId: null,
-    defenseBonus: 0
-  },
-  {
-    id: '7',
-    worldSlug: 'kos',
-    x: 1,
-    y: 3,
-    ownerId: null,
-    defenseBonus: 0
-  },
-  {
-    id: '8',
-    worldSlug: 'kos',
-    x: 2,
-    y: 3,
-    ownerId: null,
-    defenseBonus: 0
-  },
-  {
-    id: '9',
-    worldSlug: 'kos',
-    x: 3,
-    y: 3,
-    ownerId: null,
-    defenseBonus: 0
+const squares = ref<Square[]>([]);
+// Initialize squares for testing
+for (let x = 0; x <= worldData.value.boardSize; x++) {
+  for (let y = 0; y <= worldData.value.boardSize; y++) {
+    squares.value.push(  {
+      id: `${x}-${y}`,
+      worldSlug: 'kos',
+      x: x,
+      y: y,
+      ownerId: null,
+      defenseBonus: 0
+    },);
   }
-])
+}
 
 const players = ['Alice', 'Bob', 'Charlie', 'Diana'];
 const currentPlayerId = ref<string>(players[0]!);
