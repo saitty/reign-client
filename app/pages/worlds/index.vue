@@ -9,6 +9,9 @@ const { data, error, pending } = useFetch<World[]>('/api/worlds', {
 </script>
 
 <template>
+  <Head>
+    <title>Worlds | Reign</title>
+  </Head>
   <div class="container">
     <h1 class="mt-4 text-lg">Worlds</h1>
     <div class="grid grid-cols-1 gap-4 mt-4">

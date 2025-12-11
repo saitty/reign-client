@@ -160,6 +160,9 @@ async function handleSquareClick(squareId: string) {
 </script>
 
 <template>
+  <Head>
+    <title>Reign</title>
+  </Head>
   <BaseCard class="container mt-4">
     <label>Player: </label>
 <!--    <input v-model="currentPlayerId" class="bg-input border border-border rounded px-2 py-1" placeholder="Enter your username" />-->

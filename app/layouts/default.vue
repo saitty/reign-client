@@ -10,7 +10,7 @@
         <ul class="flex gap-2">
           <li>
             <NuxtLink to="/users" class="items-center flex gap-1 hover:bg-secondary rounded-md pl-1.5 pr-2 py-1 w-fit">
-              Users
+              Players
             </NuxtLink>
           </li>
           <li>
