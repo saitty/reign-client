@@ -85,9 +85,9 @@ const squareBorder = 10;
       </svg>
 
       <!-- Loading overlay -->
-      <div v-if="isProcessing">
-        Processing...
-      </div>
+<!--      <div v-if="isProcessing">-->
+<!--        Processing...-->
+<!--      </div>-->
     </div>
 
   </div>

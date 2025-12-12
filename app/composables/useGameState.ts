@@ -146,6 +146,45 @@ export const useGameState = () => {
   }
 
   /**
+   * Reset world to initial state (clear all ownership)
+   */
+  const resetWorldState = async () => {
+    if (!state.worldData) {
+      state.errorMessage = 'No world loaded'
+      return
+    }
+
+    if (state.isProcessing) {
+      return // Prevent double-clicks
+    }
+
+    state.isProcessing = true
+    state.errorMessage = ''
+
+    try {
+      // Call backend to reset world
+      await gameApi.resetWorld(state.worldData.slug)
+
+      // Fetch fresh board state
+      const updatedSquares = await gameApi.getBoardSquares(state.worldData.slug)
+
+      // Update local state with reset board
+      state.squares = updatedSquares
+    } catch (error: any) {
+      // Set error message
+      if (error.response?.status === 404) {
+        state.errorMessage = 'World not found.'
+      } else {
+        state.errorMessage = error.message || 'Failed to reset world. Please try again.'
+      }
+
+      console.error('Reset world error:', error)
+    } finally {
+      state.isProcessing = false
+    }
+  }
+
+  /**
    * Clear error message
    */
   const clearError = () => {
@@ -173,6 +212,7 @@ export const useGameState = () => {
     initGame,
     captureSquare,
     defendSquare,
+    resetWorldState,
     updateSquare,
     clearError,
     resetGame

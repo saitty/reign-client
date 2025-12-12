@@ -45,6 +45,11 @@ function handleSquareClick(square: Square) {
     gameState.captureSquare(square)
   }
 }
+
+// Handle world reset
+function handleReset() {
+  gameState.resetWorldState()
+}
 </script>
 
 <template>
@@ -54,14 +59,14 @@ function handleSquareClick(square: Square) {
   </Head>
   <div class="container mt-4">
     <!-- User Info -->
-    <div v-if="auth.currentUser.value" class="mb-4 p-4 bg-gray-100 rounded">
-      <p class="text-sm">Playing as: <strong>{{ auth.currentUser.value.username }}</strong></p>
+    <div v-if="auth.currentUser.value" class="mb-4 p-4 bg-card rounded border border-border">
+      <p class="text-sm text-card-foreground">Playing as: <strong>{{ auth.currentUser.value.username }}</strong></p>
     </div>
 
     <!-- World Info -->
     <div v-if="worldData" class="mb-4">
-      <h1 class="text-3xl font-bold mb-2">{{ worldData.name }}</h1>
-      <p class="text-gray-600">Board Size: {{ worldData.boardSize }}x{{ worldData.boardSize }} | Max Players: {{ worldData.maxPlayers }}</p>
+      <h1 class="text-3xl font-bold mb-2 text-foreground">{{ worldData.name }}</h1>
+      <p class="text-muted-foreground">Board Size: {{ worldData.boardSize }}x{{ worldData.boardSize }} | Max Players: {{ worldData.maxPlayers }}</p>
     </div>
 
     <!-- Game Board -->
@@ -76,7 +81,7 @@ function handleSquareClick(square: Square) {
     </div>
 
     <!-- Error States -->
-    <div v-else-if="worldError || boardError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+    <div v-else-if="worldError || boardError" class="bg-destructive border border-destructive text-destructive-foreground px-4 py-3 rounded">
       <h1 class="font-bold">Error loading world</h1>
       <p>{{ worldError || boardError }}</p>
     </div>
@@ -84,9 +89,19 @@ function handleSquareClick(square: Square) {
     <!-- Loading State -->
     <div v-else class="flex items-center justify-center p-8">
       <div class="text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-        <p>Loading world...</p>
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        <p class="text-foreground">Loading world...</p>
       </div>
     </div>
+
+    <UiBaseButton
+      @click="handleReset"
+      :loading="gameState.isProcessing.value"
+      :disabled="!gameState.worldData.value"
+      variant="danger"
+      class="mt-4"
+    >
+      Reset World
+    </UiBaseButton>
   </div>
 </template>

@@ -54,10 +54,21 @@ export const useGameApi = () => {
     })
   }
 
+  /**
+   * Reset world state
+   */
+  const resetWorld = async (slug: string): Promise<World> => {
+    return await $fetch<World>(`/api/worlds/${slug}/reset`, {
+      baseURL,
+      method: 'POST'
+    })
+  }
+
   return {
     captureSquare,
     defendSquare,
     getWorld,
-    getBoardSquares
+    getBoardSquares,
+    resetWorld
   }
 }
