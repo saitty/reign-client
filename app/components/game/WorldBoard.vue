@@ -65,8 +65,7 @@ const squareBorder = 10;
             :fill="getSquareColor(square)"
             @click="handleSquareClick(square)"
             :style="{
-              cursor: isProcessing ? 'wait' : 'pointer',
-              opacity: isProcessing ? 0.5 : 1
+              cursor: isProcessing ? 'wait' : 'pointer'
             }"
           />
           <!-- Defense bonus indicator -->
