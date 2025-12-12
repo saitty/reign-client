@@ -8,6 +8,9 @@ const gameState = useGameState()
 
 const slug = Array.isArray(route.params.slug) ? route.params.slug[0] : (route.params.slug ?? '')
 
+// Initialize WebSocket
+const ws = useGameWebSocket(slug)
+
 // Initialize auth on mount
 onMounted(() => {
   auth.initAuth()
@@ -16,6 +19,21 @@ onMounted(() => {
   if (!auth.currentUser.value) {
     auth.mockLogin(`Player${Math.floor(Math.random() * 1000)}`)
   }
+
+  // Setup WebSocket message handler BEFORE connecting
+  ws.onMessage((message) => {
+    console.log('🎮 Game received WebSocket message:', message)
+    gameState.handleWebSocketMessage(message)
+  })
+
+  // Connect to WebSocket after handler is registered
+  console.log('🔌 Attempting WebSocket connection to:', slug)
+  ws.connect()
+})
+
+// Disconnect WebSocket on unmount
+onUnmounted(() => {
+  ws.disconnect()
 })
 
 // Fetch world metadata
@@ -67,9 +85,23 @@ function handleReset() {
         </p>
       </div>
 
-      <div v-if="auth.currentUser.value" class="px-4 py-2 bg-card rounded-lg border border-border">
-        <p class="text-sm text-muted-foreground">Playing as</p>
-        <p class="font-semibold text-card-foreground">{{ auth.currentUser.value.username }}</p>
+      <div class="flex gap-4 items-start">
+        <!-- WebSocket Status -->
+        <div class="px-3 py-2 bg-card rounded-lg border border-border flex items-center gap-2">
+          <div
+            class="w-2 h-2 rounded-full"
+            :class="ws.isConnected.value ? 'bg-green-500' : 'bg-red-500'"
+          ></div>
+          <p class="text-xs text-muted-foreground">
+            {{ ws.isConnected.value ? 'Live' : 'Offline' }}
+          </p>
+        </div>
+
+        <!-- User Info -->
+        <div v-if="auth.currentUser.value" class="px-4 py-2 bg-card rounded-lg border border-border">
+          <p class="text-sm text-muted-foreground">Playing as</p>
+          <p class="font-semibold text-card-foreground">{{ auth.currentUser.value.username }}</p>
+        </div>
       </div>
     </div>
 
@@ -77,6 +109,13 @@ function handleReset() {
     <div v-if="worldError || boardError" class="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg mb-6">
       <h2 class="font-bold">Error loading world</h2>
       <p class="text-sm">{{ worldError || boardError }}</p>
+    </div>
+
+    <!-- WebSocket Error -->
+    <div v-if="ws.error.value" class="bg-yellow-500/10 border border-yellow-500 text-yellow-700 px-4 py-3 rounded-lg mb-6">
+      <h2 class="font-bold">WebSocket Error</h2>
+      <p class="text-sm">{{ ws.error.value }}</p>
+      <p class="text-xs mt-1">Check browser console for details. Make sure backend is running on port 8080.</p>
     </div>
 
     <!-- Game Board -->

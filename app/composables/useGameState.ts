@@ -185,6 +185,35 @@ export const useGameState = () => {
   }
 
   /**
+   * Handle WebSocket message (for real-time updates from other players)
+   */
+  const handleWebSocketMessage = async (message: {
+    type: 'SQUARE_CAPTURED' | 'SQUARE_DEFENDED' | 'WORLD_RESET'
+    square: Square | null
+    playerId: string | null
+  }) => {
+    // Ignore our own messages (we already updated optimistically)
+    if (message.playerId === auth.currentUser.value?.id) {
+      return
+    }
+
+    if (message.type === 'WORLD_RESET') {
+      // Reload entire board
+      if (state.worldData) {
+        try {
+          const updatedSquares = await gameApi.getBoardSquares(state.worldData.slug)
+          state.squares = updatedSquares
+        } catch (error) {
+          console.error('Failed to reload board after reset:', error)
+        }
+      }
+    } else if (message.square) {
+      // Update single square
+      updateSquare(message.square)
+    }
+  }
+
+  /**
    * Clear error message
    */
   const clearError = () => {
@@ -213,6 +242,7 @@ export const useGameState = () => {
     captureSquare,
     defendSquare,
     resetWorldState,
+    handleWebSocketMessage,
     updateSquare,
     clearError,
     resetGame
