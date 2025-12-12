@@ -12,8 +12,8 @@ const { data, error, pending } = useFetch<World[]>('/api/worlds', {
   <Head>
     <title>Worlds | Reign</title>
   </Head>
-  <div class="container">
-    <h1 class="mt-4 text-lg">Worlds</h1>
+  <div class="container px-4 py-6">
+    <h1 class="text-lg">Worlds</h1>
     <div class="grid grid-cols-1 gap-4 mt-4">
       <template v-if="pending">
         <p class="text-secondary-foreground bg-secondary rounded-md px-4 py-2 w-fit mx-auto">Loading ... </p>
