@@ -38,24 +38,42 @@ function handleSquareClick(square: Square){
 
 const squareSize = 100;
 const squareBorder = 10;
+
+// Calculate viewBox dimensions
+const viewBoxSize = computed(() => {
+  const size = (props.worldData.boardSize * squareSize) + squareBorder;
+  return `0 0 ${size} ${size}`;
+});
+
+const minSquareSize = 32; // 2rem = 32px
+
+const minBoardSize = computed(() => {
+  const size = (props.worldData.boardSize * minSquareSize) + squareBorder;
+  return `${size}px`;
+});
 </script>
 
 <template>
-  <div>
+  <div class="w-full">
     <!-- Error message -->
     <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
       <span class="block sm:inline">{{ errorMessage }}</span>
     </div>
 
-    <!-- Board -->
-    <div style="position: relative;">
-      <svg :width="(worldData.boardSize * squareSize)+squareBorder" :height="(worldData.boardSize * squareSize)+squareBorder" class="fill-current mb-4 bg-primary text-muted">
+    <!-- Board Container with scroll -->
+    <div class="w-full max-w-full overflow-auto border border-border rounded-lg">
+      <svg
+        :viewBox="viewBoxSize"
+        :style="{ minWidth: minBoardSize, minHeight: minBoardSize }"
+        class="w-full h-auto fill-current  text-muted"
+        preserveAspectRatio="xMidYMid meet"
+      >
         <template
-            v-for="square in squares"
-            :key="square.id"
+          v-for="square in squares"
+          :key="square.id"
         >
           <rect
-            class="hover:stroke-muted-foreground"
+            class="hover:stroke-muted-foreground transition-colors"
             :x="((square.x) * squareSize)+squareBorder"
             :y="((square.y) * squareSize)+squareBorder"
             :width="squareSize - squareBorder"
@@ -82,12 +100,6 @@ const squareBorder = 10;
           />
         </template>
       </svg>
-
-      <!-- Loading overlay -->
-<!--      <div v-if="isProcessing">-->
-<!--        Processing...-->
-<!--      </div>-->
     </div>
-
   </div>
 </template>

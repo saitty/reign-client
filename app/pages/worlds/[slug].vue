@@ -74,7 +74,7 @@ function handleReset() {
     <title v-if="worldData">{{ worldData.name }} - World | Reign</title>
     <title v-else>Loading World... | Reign</title>
   </Head>
-  <div class="container mx-auto px-4 py-6 max-w-7xl">
+  <div class="container mx-auto px-4 py-6">
     <!-- Header Section -->
     <div class="flex justify-between items-start mb-6">
       <div v-if="worldData">
@@ -89,7 +89,7 @@ function handleReset() {
         <div class="px-3 py-2 bg-card rounded-lg border border-border flex items-center gap-2">
           <div
             class="w-2 h-2 rounded-full"
-            :class="ws.isConnected.value ? 'bg-green-500' : 'bg-red-500'"
+            :class="ws.isConnected.value ? 'bg-success' : 'bg-destructive'"
           ></div>
           <p class="text-xs text-muted-foreground">
             {{ ws.isConnected.value ? 'Live' : 'Offline' }}
