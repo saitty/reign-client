@@ -22,12 +22,10 @@ onMounted(() => {
 
   // Setup WebSocket message handler BEFORE connecting
   ws.onMessage((message) => {
-    console.log('🎮 Game received WebSocket message:', message)
     gameState.handleWebSocketMessage(message)
   })
 
-  // Connect to WebSocket after handler is registered
-  console.log('🔌 Attempting WebSocket connection to:', slug)
+  // Connect to WebSocket
   ws.connect()
 })
 
@@ -66,6 +64,7 @@ function handleSquareClick(square: Square) {
 
 // Handle world reset
 function handleReset() {
+
   gameState.resetWorldState()
 }
 </script>
@@ -130,7 +129,7 @@ function handleReset() {
 
       <UiBaseButton
         @click="handleReset"
-        :loading="gameState.isProcessing.value"
+        :loading="gameState.isResetting.value"
         :disabled="!gameState.worldData.value"
         variant="outline"
         class="mt-6"

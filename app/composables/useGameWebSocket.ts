@@ -4,7 +4,7 @@ import type { Square } from '~~/types/database'
 
 interface SquareUpdateMessage {
   type: 'SQUARE_CAPTURED' | 'SQUARE_DEFENDED' | 'WORLD_RESET'
-  square: Square | null
+  board: Square[]
   playerId: string | null
   timestamp: number
 }
@@ -22,7 +22,6 @@ export const useGameWebSocket = (worldSlug: string) => {
 
   const connect = () => {
     if (client) {
-      console.warn('WebSocket already connected')
       return
     }
 
@@ -31,10 +30,8 @@ export const useGameWebSocket = (worldSlug: string) => {
         // Use SockJS for compatibility
         webSocketFactory: () => new SockJS(`${config.public.apiBase}/ws`),
 
-        // Debug logging (optional)
-        debug: (str) => {
-          console.log('[WebSocket]', str)
-        },
+        // Debug disabled
+        debug: () => {},
 
         // Reconnect settings
         reconnectDelay: 5000,
@@ -43,7 +40,6 @@ export const useGameWebSocket = (worldSlug: string) => {
 
         // On successful connection
         onConnect: () => {
-          console.log('✅ WebSocket connected')
           isConnected.value = true
           error.value = null
 
@@ -54,7 +50,6 @@ export const useGameWebSocket = (worldSlug: string) => {
               (message: IMessage) => {
                 try {
                   const data: SquareUpdateMessage = JSON.parse(message.body)
-                  console.log('📨 WebSocket message received:', data)
 
                   // Call the registered callback
                   if (messageCallback) {
@@ -65,26 +60,22 @@ export const useGameWebSocket = (worldSlug: string) => {
                 }
               }
             )
-            console.log(`📡 Subscribed to /topic/worlds/${worldSlug}`)
           }
         },
 
         // On disconnection
         onDisconnect: () => {
-          console.log('❌ WebSocket disconnected')
           isConnected.value = false
         },
 
         // On error
         onStompError: (frame) => {
-          console.error('❌ WebSocket error:', frame)
           error.value = frame.headers['message'] || 'WebSocket error'
           isConnected.value = false
         },
 
         // On WebSocket error
         onWebSocketError: (event) => {
-          console.error('❌ WebSocket connection error:', event)
           error.value = 'Failed to connect to WebSocket'
           isConnected.value = false
         }
@@ -93,7 +84,6 @@ export const useGameWebSocket = (worldSlug: string) => {
       // Activate (connect)
       client.activate()
     } catch (err) {
-      console.error('Failed to create WebSocket client:', err)
       error.value = 'Failed to initialize WebSocket'
     }
   }
@@ -110,7 +100,6 @@ export const useGameWebSocket = (worldSlug: string) => {
     }
 
     isConnected.value = false
-    console.log('🔌 WebSocket disconnected')
   }
 
   // Register callback for incoming messages

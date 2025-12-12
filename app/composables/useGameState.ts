@@ -4,6 +4,7 @@ interface GameState {
   squares: Square[]
   worldData: World | null
   isProcessing: boolean
+  isResetting: boolean
   errorMessage: string
 }
 
@@ -16,6 +17,7 @@ export const useGameState = () => {
     squares: [],
     worldData: null,
     isProcessing: false,
+    isResetting: false,
     errorMessage: ''
   })
 
@@ -26,6 +28,7 @@ export const useGameState = () => {
     state.worldData = world
     state.squares = squares
     state.isProcessing = false
+    state.isResetting = false
     state.errorMessage = ''
   }
 
@@ -40,7 +43,7 @@ export const useGameState = () => {
   }
 
   /**
-   * Handle square capture with optimistic updates
+   * Handle square capture - server authoritative
    */
   const captureSquare = async (square: Square) => {
     if (!state.worldData || !auth.currentUser.value) {
@@ -55,29 +58,18 @@ export const useGameState = () => {
     state.isProcessing = true
     state.errorMessage = ''
 
-    // Store original state for rollback
-    const originalOwnerId = square.ownerId
-    const currentUserId = auth.currentUser.value.id
-
     try {
-      // Optimistic update - update UI immediately
-      square.ownerId = currentUserId
-
-      // Call backend
-      const updatedSquare = await gameApi.captureSquare(
+      // Call backend - don't update UI yet, wait for WebSocket
+      await gameApi.captureSquare(
         state.worldData.slug,
         square.x,
         square.y,
-        currentUserId
+        auth.currentUser.value.id
       )
-
-      // Update with server response
-      updateSquare(updatedSquare)
+      // WebSocket will update the board
     } catch (error: any) {
-      // Rollback on error
-      square.ownerId = originalOwnerId
+      state.isProcessing = false
 
-      // Set error message
       if (error.response?.status === 400) {
         state.errorMessage = 'Invalid move! You can only capture adjacent squares.'
       } else if (error.response?.status === 404) {
@@ -85,15 +77,11 @@ export const useGameState = () => {
       } else {
         state.errorMessage = error.message || 'Failed to capture square. Please try again.'
       }
-
-      console.error('Capture error:', error)
-    } finally {
-      state.isProcessing = false
     }
   }
 
   /**
-   * Handle square defend with optimistic updates
+   * Handle square defend - server authoritative
    */
   const defendSquare = async (square: Square) => {
     if (!state.worldData || !auth.currentUser.value) {
@@ -108,29 +96,18 @@ export const useGameState = () => {
     state.isProcessing = true
     state.errorMessage = ''
 
-    // Store original state for rollback
-    const originalDefenseBonus = square.defenseBonus
-    const currentDefenseBonus = 1
-
     try {
-      // Optimistic update - update UI immediately
-      square.defenseBonus = currentDefenseBonus
-
-      // Call backend
-      const updatedSquare = await gameApi.defendSquare(
+      // Call backend - don't update UI yet, wait for WebSocket
+      await gameApi.defendSquare(
         state.worldData.slug,
         square.x,
         square.y,
         auth.currentUser.value.id
       )
-
-      // Update with server response
-      updateSquare(updatedSquare)
+      // WebSocket will update the board
     } catch (error: any) {
-      // Rollback on error
-      square.defenseBonus = originalDefenseBonus
+      state.isProcessing = false
 
-      // Set error message
       if (error.response?.status === 400) {
         state.errorMessage = 'Invalid move! You can only defend your own squares.'
       } else if (error.response?.status === 404) {
@@ -138,19 +115,15 @@ export const useGameState = () => {
       } else {
         state.errorMessage = error.message || 'Failed to defend square. Please try again.'
       }
-
-      console.error('Capture error:', error)
-    } finally {
-      state.isProcessing = false
     }
   }
 
   /**
-   * Reset world to initial state (clear all ownership)
+   * Reset world to initial state - server authoritative
    */
   const resetWorldState = async () => {
-    if (!state.worldData) {
-      state.errorMessage = 'No world loaded'
+    if (!state.worldData || !auth.currentUser.value) {
+      state.errorMessage = 'No world loaded or not logged in'
       return
     }
 
@@ -158,59 +131,38 @@ export const useGameState = () => {
       return // Prevent double-clicks
     }
 
+    state.isResetting = true
     state.isProcessing = true
     state.errorMessage = ''
 
     try {
-      // Call backend to reset world
-      await gameApi.resetWorld(state.worldData.slug)
-
-      // Fetch fresh board state
-      const updatedSquares = await gameApi.getBoardSquares(state.worldData.slug)
-
-      // Update local state with reset board
-      state.squares = updatedSquares
+      // Call backend - don't update UI yet, wait for WebSocket
+      await gameApi.resetWorld(state.worldData.slug, auth.currentUser.value.id)
+      // WebSocket will update the board
     } catch (error: any) {
-      // Set error message
+      state.isResetting = false
+      state.isProcessing = false
+
       if (error.response?.status === 404) {
         state.errorMessage = 'World not found.'
       } else {
         state.errorMessage = error.message || 'Failed to reset world. Please try again.'
       }
-
-      console.error('Reset world error:', error)
-    } finally {
-      state.isProcessing = false
     }
   }
 
   /**
-   * Handle WebSocket message (for real-time updates from other players)
+   * Handle WebSocket message - server authoritative board updates
    */
-  const handleWebSocketMessage = async (message: {
+  const handleWebSocketMessage = (message: {
     type: 'SQUARE_CAPTURED' | 'SQUARE_DEFENDED' | 'WORLD_RESET'
-    square: Square | null
+    board: Square[]
     playerId: string | null
   }) => {
-    // Ignore our own messages (we already updated optimistically)
-    if (message.playerId === auth.currentUser.value?.id) {
-      return
-    }
-
-    if (message.type === 'WORLD_RESET') {
-      // Reload entire board
-      if (state.worldData) {
-        try {
-          const updatedSquares = await gameApi.getBoardSquares(state.worldData.slug)
-          state.squares = updatedSquares
-        } catch (error) {
-          console.error('Failed to reload board after reset:', error)
-        }
-      }
-    } else if (message.square) {
-      // Update single square
-      updateSquare(message.square)
-    }
+    // Replace entire board state with server's authoritative state
+    state.squares = message.board
+    state.isResetting = false
+    state.isProcessing = false
   }
 
   /**
@@ -226,6 +178,7 @@ export const useGameState = () => {
   const resetGame = () => {
     state.squares = []
     state.worldData = null
+    state.isResetting = false
     state.isProcessing = false
     state.errorMessage = ''
   }
@@ -235,6 +188,7 @@ export const useGameState = () => {
     squares: toRef(state, 'squares'),
     worldData: toRef(state, 'worldData'),
     isProcessing: toRef(state, 'isProcessing'),
+    isResetting: toRef(state, 'isResetting'),
     errorMessage: toRef(state, 'errorMessage'),
 
     // Actions
