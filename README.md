@@ -1,75 +1,47 @@
-# Nuxt Minimal Starter
+# Reign Client
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Reign is a multiplayer territory conquest game. Players can capture and defend squares on a grid-based board in real-time.
+The client is built with Nuxt and uses WebSocket for real-time updates.
+
+This client need [Reign backend server](https://github.com/bkrnd/reign) to function properly.
+
+
+
+## Technologies
+
+- Nuxt 4
+- Vue 3
+- TypeScript
+- Tailwind CSS
+- WebSocket (STOMP)
 
 ## Setup
 
-Make sure to install dependencies:
-
+1. Install dependencies:
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
+2. Run development server:
 ```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+The application will be available at `http://localhost:3000`
 
-Build the application for production:
+## Configuration
+
+Backend API URL is configured in `nuxt.config.ts`, local [Reign](https://github.com/bkrnd/reign) server should be running at this address:
+```typescript
+runtimeConfig: {
+  public: {
+    apiBase: 'http://localhost:8080'
+  }
+}
+```
+
+## Build
 
 ```bash
-# npm
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
 ```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
