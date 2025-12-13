@@ -27,6 +27,7 @@ const handleLogout = async () => {
         <ul class="flex gap-2 items-center">
           <li v-if="isAuthenticated">
             <NuxtLink to="/worlds" class="items-center flex gap-1 hover:bg-secondary rounded-md pl-1.5 pr-2 py-1 w-fit">
+              <Icon name="mdi:map" size="16" />
               Worlds
             </NuxtLink>
           </li>
