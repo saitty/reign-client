@@ -2,6 +2,8 @@
 import type { Square } from '~~/types/database';
 
 const auth = useAuth()
+const team = useTeam()
+const colorMode = useColorMode()
 
 const props = defineProps<{
   worldData: {
@@ -19,10 +21,17 @@ const emit = defineEmits<{
   'square-click': [square: Square];
 }>();
 
-// Player colors (max 4 players)
-const playerColors = ['hsl(220 70% 50%)', 'hsl(160 60% 45%)', 'hsl(30 80% 55%)', 'hsl(280 65% 60%)'];
 
-// Compute player statistics: who owns what and how many squares
+// TODO this is just temporary until we have proper teams
+const teamColorKeys = <string[]>[
+  'red',
+  'blue',
+  'green',
+  'yellow',
+  'purple',
+  'teal'
+];
+
 const playerStats = computed(() => {
   const squareCounts = new Map<string, number>();
 
@@ -33,16 +42,17 @@ const playerStats = computed(() => {
     }
   });
 
-  // Sort player IDs alphabetically for stable color assignment
   const sortedPlayerIds = Array.from(squareCounts.keys()).sort();
 
-  // Create stats with stable color indices based on sorted order
-  const stats = new Map<string, { ownerId: string; squareCount: number; colorIndex: number }>();
+  const stats = new Map<string, { ownerId: string; squareCount: number; color: string }>();
   sortedPlayerIds.forEach((ownerId, index) => {
     stats.set(ownerId, {
       ownerId,
       squareCount: squareCounts.get(ownerId)!,
-      colorIndex: index % playerColors.length
+      // TODO teams will be stored in database later
+      color: team.getTeamColor(
+        <any>teamColorKeys[index % teamColorKeys.length], <'dark' | 'light'>colorMode.value
+      )
     });
   });
 
@@ -51,9 +61,9 @@ const playerStats = computed(() => {
 
 // Get color index for a player (ensures consistent unique colors)
 const playerColorMap = computed(() => {
-  const colorMap = new Map<string, number>();
+  const colorMap = new Map<string, string>();
   playerStats.value.forEach((stat, ownerId) => {
-    colorMap.set(ownerId, stat.colorIndex);
+    colorMap.set(ownerId, stat.color);
   });
   return colorMap;
 });
@@ -64,8 +74,7 @@ function getSquareColor(square: Square): string {
     return 'currentColor';  // Empty square
   }
 
-  const colorIndex = playerColorMap.value.get(square.ownerId) ?? 0;
-  return playerColors[colorIndex] ?? playerColors[0]!;
+  return playerColorMap.value.get(square.ownerId) ?? 'currentColor';
 }
 
 // Handle square click
@@ -95,7 +104,7 @@ const minBoardSize = computed(() => {
 <template>
   <div class="w-full">
     <!-- Error message -->
-    <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+    <div v-if="errorMessage" class="bg-destructive border border-destructive text-destructive-foreground px-4 py-3 rounded mb-4" role="alert">
       <span class="block sm:inline">{{ errorMessage }}</span>
     </div>
 
@@ -110,7 +119,7 @@ const minBoardSize = computed(() => {
         >
           <div
             class="size-8 rounded shrink-0"
-            :style="{ backgroundColor: playerColors[stat.colorIndex] }"
+            :style="{ backgroundColor: stat.color }"
           ></div>
           <div class="flex-1 min-w-0">
             <p class="text-xs font-medium text-foreground truncate">{{ stat.squareCount }} squares</p>
@@ -125,7 +134,7 @@ const minBoardSize = computed(() => {
       <svg
         :viewBox="viewBoxSize"
         :style="{ minWidth: minBoardSize, minHeight: minBoardSize }"
-        class="w-full h-auto fill-current  text-muted"
+        class="w-full h-auto fill-current text-muted"
         preserveAspectRatio="xMidYMid meet"
       >
         <template
@@ -133,12 +142,11 @@ const minBoardSize = computed(() => {
           :key="square.id"
         >
           <rect
-            class="hover:stroke-muted-foreground transition-colors"
+            class="hover:stroke-foreground transition-colors stroke-background"
             :x="((square.x) * squareSize)+squareBorder"
             :y="((square.y) * squareSize)+squareBorder"
             :width="squareSize - squareBorder"
             :height="squareSize - squareBorder"
-            stroke="black"
             :stroke-width="squareBorder"
             :fill="getSquareColor(square)"
             @click="handleSquareClick(square)"
@@ -149,12 +157,11 @@ const minBoardSize = computed(() => {
           <!-- Defense bonus indicator -->
           <rect
             v-if="square.defenseBonus === 1"
+            class="stroke-foreground fill-foreground/30 dark:stroke-background dark:fill-background/30"
             :x="((square.x) * squareSize) + squareBorder + (squareSize - squareBorder) / 4"
             :y="((square.y) * squareSize) + squareBorder + (squareSize - squareBorder) / 4"
             :width="(squareSize - squareBorder) / 2"
             :height="(squareSize - squareBorder) / 2"
-            fill="rgba(0, 0, 0, 0.3)"
-            stroke="black"
             :stroke-width="2"
             pointer-events="none"
           />

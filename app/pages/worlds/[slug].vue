@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {useTeam} from "~/composables/useTeam";
+
 definePageMeta({
   middleware: 'auth'
 })
@@ -9,6 +11,7 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const auth = useAuth()
 const gameState = useGameState()
+const team = useTeam()
 
 const slug = Array.isArray(route.params.slug) ? route.params.slug[0] : (route.params.slug ?? '')
 

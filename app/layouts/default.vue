@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { isAuthenticated, currentUser, logout } = useAuth()
 const router = useRouter()
+const colorMode = useColorMode()
 
 const handleLogout = async () => {
   await logout()
@@ -16,6 +17,12 @@ const handleLogout = async () => {
           <Icon name="mdi:shield-crown-outline" size="20" />
           Reign
         </NuxtLink>
+
+        <select v-model="$colorMode.preference" class="bg-primary text-foreground">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
 
         <ul class="flex gap-2 items-center">
           <li v-if="isAuthenticated">
