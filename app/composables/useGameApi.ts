@@ -3,18 +3,6 @@ import type { Square, World } from '~~/types/database'
 export const useGameApi = () => {
   const config = useRuntimeConfig()
   const baseURL = config.public.apiBase
-  const { authToken } = useAuth()
-
-  /**
-   * Get authorization headers with JWT token
-   */
-  const getHeaders = () => {
-    const headers: Record<string, string> = {}
-    if (authToken.value) {
-      headers['Authorization'] = `Bearer ${authToken.value}`
-    }
-    return headers
-  }
 
   /**
    * Capture a square on the game board
@@ -28,7 +16,7 @@ export const useGameApi = () => {
     return await $fetch<Square>(`/api/worlds/${worldSlug}/actions/capture`, {
       baseURL,
       method: 'POST',
-      headers: getHeaders(),
+      credentials: 'include', // Send cookies for authentication
       body: { x, y, playerId }
     })
   }
@@ -45,7 +33,7 @@ export const useGameApi = () => {
     return await $fetch<Square>(`/api/worlds/${worldSlug}/actions/defend`, {
       baseURL,
       method: 'POST',
-      headers: getHeaders(),
+      credentials: 'include', // Send cookies for authentication
       body: { x, y, playerId }
     })
   }
@@ -56,7 +44,7 @@ export const useGameApi = () => {
   const getWorld = async (slug: string): Promise<World> => {
     return await $fetch<World>(`/api/worlds/${slug}`, {
       baseURL,
-      headers: getHeaders()
+      credentials: 'include' // Send cookies for authentication
     })
   }
 
@@ -66,7 +54,7 @@ export const useGameApi = () => {
   const getBoardSquares = async (slug: string): Promise<Square[]> => {
     return await $fetch<Square[]>(`/api/worlds/${slug}/board`, {
       baseURL,
-      headers: getHeaders()
+      credentials: 'include' // Send cookies for authentication
     })
   }
 
@@ -77,7 +65,7 @@ export const useGameApi = () => {
     return await $fetch<World>(`/api/worlds/${slug}/reset`, {
       baseURL,
       method: 'POST',
-      headers: getHeaders(),
+      credentials: 'include', // Send cookies for authentication
       body: { playerId }
     })
   }

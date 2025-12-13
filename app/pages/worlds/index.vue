@@ -3,17 +3,9 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const config = useRuntimeConfig()
-const { authToken } = useAuth()
-
 import type { World } from '~~/types/database';
 
-const { data, error, pending } = useFetch<World[]>('/api/worlds', {
-  baseURL: config.public.apiBase,
-  headers: {
-    Authorization: authToken.value ? `Bearer ${authToken.value}` : ''
-  }
-})
+const { data, error, pending } = useApiFetch<World[]>('/api/worlds')
 </script>
 
 <template>

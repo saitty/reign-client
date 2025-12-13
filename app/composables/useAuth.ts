@@ -3,43 +3,35 @@ import type { User, AuthResponse, LoginRequest, RegisterRequest } from '~~/types
 export const useAuth = () => {
   const config = useRuntimeConfig()
 
-  // Store current user and token in composable state (shared across the app)
+  // Store current user in composable state (shared across the app)
   const currentUser = useState<User | null>('currentUser', () => null)
-  const authToken = useState<string | null>('authToken', () => null)
-  const isAuthenticated = computed(() => currentUser.value !== null && authToken.value !== null)
+  const isAuthenticated = computed(() => currentUser.value !== null)
 
-  // Set the current user and token (call this after login or on app init)
-  const setUser = (user: User | null, token: string | null = null) => {
+  // Set the current user (cookies are handled automatically by the browser)
+  const setUser = (user: User | null) => {
     currentUser.value = user
-    authToken.value = token
-
-    // Persist to localStorage for session management
-    if (user && token) {
-      localStorage.setItem('currentUser', JSON.stringify(user))
-      localStorage.setItem('authToken', token)
-    } else {
-      localStorage.removeItem('currentUser')
-      localStorage.removeItem('authToken')
-    }
   }
 
   /**
-   * Get current user and token from localStorage on app init
+   * Fetch current user from backend using httpOnly cookie
    */
-  const initAuth = () => {
+  const initAuth = async () => {
     if (process.client) {
-      const storedUser = localStorage.getItem('currentUser')
-      const storedToken = localStorage.getItem('authToken')
+      try {
+        const response = await $fetch<AuthResponse>(`${config.public.apiBase}/api/auth/me`, {
+          credentials: 'include' // Send cookies
+        })
 
-      if (storedUser && storedToken) {
-        try {
-          currentUser.value = JSON.parse(storedUser)
-          authToken.value = storedToken
-        } catch (error) {
-          console.error('Failed to parse stored user:', error)
-          localStorage.removeItem('currentUser')
-          localStorage.removeItem('authToken')
+        currentUser.value = {
+          id: response.userId,
+          username: response.username,
+          role: response.role,
+          userType: response.userType,
+          createdAt: new Date().toISOString()
         }
+      } catch (error) {
+        // User is not authenticated (no valid cookie)
+        currentUser.value = null
       }
     }
   }
@@ -51,7 +43,8 @@ export const useAuth = () => {
     try {
       const response = await $fetch<AuthResponse>(`${config.public.apiBase}/api/auth/login`, {
         method: 'POST',
-        body: credentials
+        body: credentials,
+        credentials: 'include' // Send and receive cookies
       })
 
       const user: User = {
@@ -62,7 +55,7 @@ export const useAuth = () => {
         createdAt: new Date().toISOString()
       }
 
-      setUser(user, response.token)
+      setUser(user)
       return { success: true }
     } catch (error: any) {
       console.error('Login failed:', error)
@@ -80,7 +73,8 @@ export const useAuth = () => {
     try {
       const response = await $fetch<AuthResponse>(`${config.public.apiBase}/api/auth/register`, {
         method: 'POST',
-        body: credentials
+        body: credentials,
+        credentials: 'include' // Send and receive cookies
       })
 
       const user: User = {
@@ -91,7 +85,7 @@ export const useAuth = () => {
         createdAt: new Date().toISOString()
       }
 
-      setUser(user, response.token)
+      setUser(user)
       return { success: true }
     } catch (error: any) {
       console.error('Registration failed:', error)
@@ -108,7 +102,8 @@ export const useAuth = () => {
   const loginAsGuest = async (): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await $fetch<AuthResponse>(`${config.public.apiBase}/api/auth/guest`, {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include' // Send and receive cookies
       })
 
       const user: User = {
@@ -119,7 +114,7 @@ export const useAuth = () => {
         createdAt: new Date().toISOString()
       }
 
-      setUser(user, response.token)
+      setUser(user)
       return { success: true }
     } catch (error: any) {
       console.error('Guest login failed:', error)
@@ -136,26 +131,33 @@ export const useAuth = () => {
    */
   const logout = async () => {
     // If user is a guest, delete their account
-    if (currentUser.value?.userType === 'GUEST' && currentUser.value?.id && authToken.value) {
+    if (currentUser.value?.userType === 'GUEST' && currentUser.value?.id) {
       try {
         await $fetch(`${config.public.apiBase}/api/auth/logout/${currentUser.value.id}`, {
           method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${authToken.value}`
-          }
+          credentials: 'include' // Send cookies for authentication
         })
       } catch (error) {
         console.error('Failed to delete guest account:', error)
         // Continue with logout even if deletion fails
       }
+    } else {
+      // For registered users, just clear the cookie
+      try {
+        await $fetch(`${config.public.apiBase}/api/auth/logout`, {
+          method: 'POST',
+          credentials: 'include'
+        })
+      } catch (error) {
+        console.error('Logout failed:', error)
+      }
     }
 
-    setUser(null, null)
+    setUser(null)
   }
 
   return {
     currentUser: readonly(currentUser),
-    authToken: readonly(authToken),
     isAuthenticated,
     setUser,
     initAuth,

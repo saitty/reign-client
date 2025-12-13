@@ -15,17 +15,15 @@ const slug = Array.isArray(route.params.slug) ? route.params.slug[0] : (route.pa
 // Initialize WebSocket
 const ws = useGameWebSocket(slug)
 
-// Initialize auth on mount
-onMounted(() => {
-  auth.initAuth()
-
+// Setup WebSocket and connect on mount
+onMounted(async () => {
   // Setup WebSocket message handler BEFORE connecting
   ws.onMessage((message) => {
     gameState.handleWebSocketMessage(message)
   })
 
-  // Connect to WebSocket
-  ws.connect()
+  // Connect to WebSocket (now async)
+  await ws.connect()
 })
 
 // Disconnect WebSocket on unmount
@@ -33,22 +31,11 @@ onUnmounted(() => {
   ws.disconnect()
 })
 
-// Get auth headers
-const getAuthHeaders = () => ({
-  Authorization: auth.authToken.value ? `Bearer ${auth.authToken.value}` : ''
-})
-
 // Fetch world metadata
-const { data: worldData, error: worldError } = await useFetch<World>('/api/worlds/' + slug, {
-  baseURL: config.public.apiBase,
-  headers: getAuthHeaders()
-})
+const { data: worldData, error: worldError } = await useApiFetch<World>('/api/worlds/' + slug)
 
 // Fetch board squares
-const { data: boardData, error: boardError } = await useFetch<Square[]>('/api/worlds/' + slug + '/board', {
-  baseURL: config.public.apiBase,
-  headers: getAuthHeaders()
-})
+const { data: boardData, error: boardError } = await useApiFetch<Square[]>('/api/worlds/' + slug + '/board')
 
 // Initialize game state when data loads
 watchEffect(() => {

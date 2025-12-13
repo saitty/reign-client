@@ -11,7 +11,6 @@ interface SquareUpdateMessage {
 
 export const useGameWebSocket = (worldSlug: string) => {
   const config = useRuntimeConfig()
-  const { authToken } = useAuth()
   let client: Client | null = null
   let subscription: any = null
 
@@ -21,19 +20,24 @@ export const useGameWebSocket = (worldSlug: string) => {
   // Callback for when messages arrive
   let messageCallback: ((message: SquareUpdateMessage) => void) | null = null
 
-  const connect = () => {
+  const connect = async () => {
     if (client) {
       return
     }
 
     try {
+      // Fetch WebSocket token from backend using httpOnly cookie
+      const wsToken = await $fetch<string>(`${config.public.apiBase}/api/auth/ws-token`, {
+        credentials: 'include'
+      })
+
       client = new Client({
         // Use SockJS for compatibility
         webSocketFactory: () => new SockJS(`${config.public.apiBase}/ws`),
 
         // Add JWT token to connection headers
         connectHeaders: {
-          Authorization: authToken.value ? `Bearer ${authToken.value}` : ''
+          Authorization: `Bearer ${wsToken}`
         },
 
         // Debug disabled

@@ -1,11 +1,7 @@
 <script setup lang="ts">
-const config = useRuntimeConfig()
-
 import type { User } from '~~/types/database';
 
-const { data, error, pending } = useFetch<User[]>('/api/users', {
-  baseURL: config.public.apiBase
-})
+const { data, error, pending } = useApiFetch<User[]>('/api/users')
 </script>
 
 <template>
