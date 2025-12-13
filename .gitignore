@@ -6,6 +6,10 @@
 .cache
 dist
 
+# Claude AI
+.claude
+CLAUDE.md
+
 # Node dependencies
 node_modules
 
