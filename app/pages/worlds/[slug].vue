@@ -13,7 +13,7 @@ const gameState = useGameState()
 const slug = Array.isArray(route.params.slug) ? route.params.slug[0] : (route.params.slug ?? '')
 
 // Initialize WebSocket
-const ws = useGameWebSocket(slug)
+const ws = useGameWebSocket(slug!)
 
 // Setup WebSocket and connect on mount
 onMounted(async () => {

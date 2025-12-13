@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Square } from '~~/types/database';
 
+const auth = useAuth()
+
 const props = defineProps<{
   worldData: {
     name: string;
@@ -112,7 +114,7 @@ const minBoardSize = computed(() => {
           ></div>
           <div class="flex-1 min-w-0">
             <p class="text-xs font-medium text-foreground truncate">{{ stat.squareCount }} squares</p>
-            <p class="text-xs text-muted-foreground">{{ ownerId }}</p>
+            <p v-if="ownerId === auth.currentUser.value?.id" class="text-xs text-muted-foreground">Me</p>
           </div>
         </div>
       </div>
