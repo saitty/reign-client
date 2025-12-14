@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Square } from '~~/types/database';
+import type {Square, User} from '~~/types/database';
 
 const auth = useAuth()
 const team = useTeam()
@@ -37,21 +37,23 @@ const playerStats = computed(() => {
 
   // Count squares per player
   props.squares.forEach(square => {
-    if (square.ownerId) {
-      squareCounts.set(square.ownerId, (squareCounts.get(square.ownerId) ?? 0) + 1);
+    if (square.owner) {
+      squareCounts.set(square.owner.username, (squareCounts.get(square.owner.username) ?? 0) + 1);
     }
   });
 
   const sortedPlayerIds = Array.from(squareCounts.keys()).sort();
 
-  const stats = new Map<string, { ownerId: string; squareCount: number; color: string }>();
-  sortedPlayerIds.forEach((ownerId, index) => {
-    stats.set(ownerId, {
-      ownerId,
-      squareCount: squareCounts.get(ownerId)!,
+  // Get current color mode, default to dark if not set
+  const mode = (colorMode.value === 'light' || colorMode.value === 'dark') ? colorMode.value : 'dark';
+
+  const stats = new Map<string, { squareCount: number; color: string }>();
+  sortedPlayerIds.forEach((ownerUsername, index) => {
+    stats.set(ownerUsername, {
+      squareCount: squareCounts.get(ownerUsername) ?? 0,
       // TODO teams will be stored in database later
       color: team.getTeamColor(
-        <any>teamColorKeys[index % teamColorKeys.length], <'dark' | 'light'>colorMode.value
+        teamColorKeys[index % teamColorKeys.length] as any, mode
       )
     });
   });
@@ -62,19 +64,19 @@ const playerStats = computed(() => {
 // Get color index for a player (ensures consistent unique colors)
 const playerColorMap = computed(() => {
   const colorMap = new Map<string, string>();
-  playerStats.value.forEach((stat, ownerId) => {
-    colorMap.set(ownerId, stat.color);
+  playerStats.value.forEach((stat, ownerUsername) => {
+    colorMap.set(ownerUsername, stat.color);
   });
   return colorMap;
 });
 
 // Get square color based on owner
 function getSquareColor(square: Square): string {
-  if (!square || !square.ownerId) {
+  if (!square || !square.owner) {
     return 'currentColor';  // Empty square
   }
 
-  return playerColorMap.value.get(square.ownerId) ?? 'currentColor';
+  return playerColorMap.value.get(square.owner.username) ?? 'currentColor';
 }
 
 // Handle square click
@@ -113,8 +115,8 @@ const minBoardSize = computed(() => {
       <h3 class="text-sm font-semibold text-card-foreground mb-3">Players</h3>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div
-          v-for="[ownerId, stat] in playerStats"
-          :key="ownerId"
+          v-for="[owner, stat] in playerStats"
+          :key="owner"
           class="flex items-center gap-2 p-2 bg-background rounded border border-border"
         >
           <div
@@ -123,7 +125,7 @@ const minBoardSize = computed(() => {
           ></div>
           <div class="flex-1 min-w-0">
             <p class="text-xs font-medium text-foreground truncate">{{ stat.squareCount }} squares</p>
-            <p v-if="ownerId === auth.currentUser.value?.id" class="text-xs text-muted-foreground">Me</p>
+            <p class="text-xs text-muted-foreground">{{ owner }}</p>
           </div>
         </div>
       </div>

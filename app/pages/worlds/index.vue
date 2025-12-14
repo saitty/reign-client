@@ -27,7 +27,7 @@ const { data, error, pending } = useApiFetch<World[]>('/api/worlds')
             <h2 class="text-xl">{{ world.name }}</h2>
           </NuxtLink>
           <p class="text-muted-foreground">Slug: {{ world.slug }}</p>
-          <p class="text-muted-foreground">Owner ID: {{ world.ownerId }}</p>
+          <p class="text-muted-foreground">Owner ID: {{ world.owner.username }}</p>
           <p class="text-muted-foreground">Board Size: {{ world.boardSize }}</p>
           <p class="text-muted-foreground">Max Players: {{ world.maxPlayers }}</p>
           <p class="text-muted-foreground">Created At: {{ world.createdAt }}</p>

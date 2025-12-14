@@ -1,8 +1,16 @@
+export interface User {
+    id: string;
+    username: string;
+    createdAt: string;
+    role?: 'USER' | 'ADMIN';
+    userType?: 'GUEST' | 'REGISTERED';
+}
+
 export interface World {
     id: string;
     slug: string;
     name: string;
-    ownerId: string;
+    owner: User;
     boardSize: number;
     maxPlayers: number;
     createdAt: string;
@@ -13,16 +21,8 @@ export interface Square {
     worldSlug: string;
     x: number;
     y: number;
-    ownerId: string | null;
+    owner: User | null;
     defenseBonus: number;
-}
-
-export interface User {
-    id: string;
-    username: string;
-    createdAt: string;
-    role?: 'USER' | 'ADMIN';
-    userType?: 'GUEST' | 'REGISTERED';
 }
 
 export interface AuthResponse {

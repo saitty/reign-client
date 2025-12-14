@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import BaseButton from "~/components/ui/BaseButton.vue";
 
-const isOpen = ref(true);
+const isOpen = ref(false);
 </script>
 
 <template>

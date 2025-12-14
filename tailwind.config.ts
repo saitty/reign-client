@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+// @ts-ignore
 import defaultTheme from 'tailwindcss/defaultTheme'
 
 export default {
