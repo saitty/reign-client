@@ -31,6 +31,12 @@ const { data, error, pending } = useApiFetch<World[]>('/api/worlds')
           <p class="text-muted-foreground">Board Size: {{ world.boardSize }}</p>
           <p class="text-muted-foreground">Max Players: {{ world.maxPlayers }}</p>
           <p class="text-muted-foreground">Created At: {{ world.createdAt }}</p>
+          <UiBaseButton
+            class="mt-4"
+            @click="() => $router.push(`/worlds/${world.slug}`)"
+          >
+            Join World
+          </UiBaseButton>
         </UiCard>
       </template>
     </div>
