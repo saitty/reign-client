@@ -12,7 +12,7 @@ const emit = defineEmits<{
 }>()
 
 const variantClasses = {
-  primary: 'bg-primary hover:opacity-90 text-primary-foreground',
+  primary: 'bg-primary hover:opacity-90 text-foreground',
   secondary: 'bg-secondary hover:opacity-90 text-secondary-foreground',
   danger: 'bg-destructive hover:opacity-90 text-destructive-foreground',
   success: 'bg-accent hover:opacity-90 text-accent-foreground',
