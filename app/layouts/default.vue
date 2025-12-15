@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const { isAuthenticated, currentUser, logout } = useAuth()
 const router = useRouter()
-const colorMode = useColorMode()
 
 const handleLogout = async () => {
   await logout()
