@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import type {Square, User} from '~~/types/database';
+import type { Square } from '~~/types/database';
 
-const auth = useAuth()
 const teamColor = useTeamColor()
-const colorMode = useColorMode()
 
 const props = defineProps<{
   worldData: {
