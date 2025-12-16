@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import type { Square } from '~~/types/database';
 
-const auth = useAuth()
-const team = useTeam()
-const colorMode = useColorMode()
+const teamColor = useTeamColor()
 
 const props = defineProps<{
   worldData: {
@@ -21,60 +19,25 @@ const emit = defineEmits<{
   'square-click': [square: Square];
 }>();
 
-
-// TODO this is just temporary until we have proper teams
-const teamColorKeys = <string[]>[
-  'red',
-  'blue',
-  'green',
-  'yellow',
-  'purple',
-  'teal'
-];
-
-const playerStats = computed(() => {
-  const squareCounts = new Map<string, number>();
-
-  // Count squares per player
-  props.squares.forEach(square => {
-    if (square.ownerId) {
-      squareCounts.set(square.ownerId, (squareCounts.get(square.ownerId) ?? 0) + 1);
-    }
-  });
-
-  const sortedPlayerIds = Array.from(squareCounts.keys()).sort();
-
-  const stats = new Map<string, { ownerId: string; squareCount: number; color: string }>();
-  sortedPlayerIds.forEach((ownerId, index) => {
-    stats.set(ownerId, {
-      ownerId,
-      squareCount: squareCounts.get(ownerId)!,
-      // TODO teams will be stored in database later
-      color: team.getTeamColor(
-        <any>teamColorKeys[index % teamColorKeys.length], <'dark' | 'light'>colorMode.value
-      )
-    });
-  });
-
-  return stats;
-});
-
-// Get color index for a player (ensures consistent unique colors)
-const playerColorMap = computed(() => {
-  const colorMap = new Map<string, string>();
-  playerStats.value.forEach((stat, ownerId) => {
-    colorMap.set(ownerId, stat.color);
-  });
-  return colorMap;
-});
-
 // Get square color based on owner
 function getSquareColor(square: Square): string {
-  if (!square || !square.ownerId) {
+  if (!square || !square.owner) {
     return 'currentColor';  // Empty square
   }
 
-  return playerColorMap.value.get(square.ownerId) ?? 'currentColor';
+  let colorKey;
+  const team = (props.worldData as any).teams?.find((t: any) =>
+    t.members.some((member: any) => member.user.id === square.owner!.id)
+  );
+  if (team && team.color) {
+    colorKey = team.color;
+  }
+
+  if (!colorKey) {
+    return 'currentColor'; // Default color if no team color found
+  }
+
+  return teamColor.getTeamColor( colorKey);
 }
 
 // Handle square click
@@ -106,27 +69,6 @@ const minBoardSize = computed(() => {
     <!-- Error message -->
     <div v-if="errorMessage" class="bg-destructive border border-destructive text-destructive-foreground px-4 py-3 rounded mb-4" role="alert">
       <span class="block sm:inline">{{ errorMessage }}</span>
-    </div>
-
-    <!-- Player Stats -->
-    <div v-if="playerStats.size > 0" class="mb-4 p-4 bg-card rounded-lg border border-border">
-      <h3 class="text-sm font-semibold text-card-foreground mb-3">Players</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div
-          v-for="[ownerId, stat] in playerStats"
-          :key="ownerId"
-          class="flex items-center gap-2 p-2 bg-background rounded border border-border"
-        >
-          <div
-            class="size-8 rounded shrink-0"
-            :style="{ backgroundColor: stat.color }"
-          ></div>
-          <div class="flex-1 min-w-0">
-            <p class="text-xs font-medium text-foreground truncate">{{ stat.squareCount }} squares</p>
-            <p v-if="ownerId === auth.currentUser.value?.id" class="text-xs text-muted-foreground">Me</p>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Board Container with scroll -->

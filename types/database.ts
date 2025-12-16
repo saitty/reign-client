@@ -1,10 +1,40 @@
+export interface User {
+    id: string;
+    username: string;
+    createdAt: string;
+    role?: 'USER' | 'ADMIN';
+    userType?: 'GUEST' | 'REGISTERED';
+}
+
+export interface TeamMember {
+    id: string;
+    user: User;
+    joinedAt: string;
+    createdAt: string;
+}
+
+export interface Team {
+    id: string;
+    name: string;
+    color: "red" | "blue" | "green" | "yellow" | "purple" | "teal";
+    creator: User;
+    members: TeamMember[];
+    createdAt: string;
+}
+
 export interface World {
     id: string;
     slug: string;
     name: string;
-    ownerId: string;
+    owner: User;
+    teams: Team[];
     boardSize: number;
     maxPlayers: number;
+    maxTeams: number;
+    minTeams: number;
+    maxTeamSize: number;
+    minTeamSize: number;
+    allowPlayerTeamCreation: boolean;
     createdAt: string;
 }
 
@@ -13,16 +43,8 @@ export interface Square {
     worldSlug: string;
     x: number;
     y: number;
-    ownerId: string | null;
+    owner: User | null;
     defenseBonus: number;
-}
-
-export interface User {
-    id: string;
-    username: string;
-    createdAt: string;
-    role?: 'USER' | 'ADMIN';
-    userType?: 'GUEST' | 'REGISTERED';
 }
 
 export interface AuthResponse {

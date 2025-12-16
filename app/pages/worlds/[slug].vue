@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import {useTeam} from "~/composables/useTeam";
-
 definePageMeta({
   middleware: 'auth'
 })
 
 import type { World, Square } from '~~/types/database';
 
-const config = useRuntimeConfig()
 const route = useRoute()
 const auth = useAuth()
 const gameState = useGameState()
-const team = useTeam()
+const teamColor = useTeamColor()
+
 
 const slug = Array.isArray(route.params.slug) ? route.params.slug[0] : (route.params.slug ?? '')
 
@@ -47,9 +45,36 @@ watchEffect(() => {
   }
 })
 
+const sortedTeams = computed(() => {
+  if (!gameState.worldData.value?.teams) {
+    return []
+  }
+  return [...gameState.worldData.value.teams].sort((a, b) => a.name.localeCompare(b.name))
+})
+
+function isPlayerInTeam(): boolean {
+  if (!auth.currentUser.value || !gameState.worldData.value?.teams) {
+    return false
+  }
+  const userTeam = gameState.worldData.value.teams.find(team =>
+    team.members.some(member => member.user.id === auth.currentUser.value?.id)
+  )
+  return !!userTeam
+}
+
 // Handle square click
 function handleSquareClick(square: Square) {
-  if ( square.ownerId === auth.currentUser.value?.id ) {
+  if (!auth.currentUser.value) {
+    alert('You must be logged in to interact with the world.')
+    return
+  }
+
+  if ( !isPlayerInTeam() ) {
+    alert('You must be in a team to interact with the world. Please join a team or contact an administrator.')
+    return
+  }
+
+  if ( square.owner?.id === auth.currentUser.value?.id ) {
     // Upgrade defense bonus if owned by current user
     gameState.defendSquare(square)
   } else {
@@ -60,7 +85,6 @@ function handleSquareClick(square: Square) {
 
 // Handle world reset
 function handleReset() {
-
   gameState.resetWorldState()
 }
 </script>
@@ -77,8 +101,20 @@ function handleReset() {
         <h1 class="text-3xl font-bold text-foreground">{{ worldData.name }}</h1>
         <p class="text-sm text-muted-foreground mt-1">
           {{ worldData.boardSize }}x{{ worldData.boardSize }} | Max Players: {{ worldData.maxPlayers }}
+          | Number of teams: {{ worldData.minTeams === worldData.maxTeams ? worldData.maxTeams : worldData.minTeams + ' - ' + worldData.maxTeams }}
+          | Team Size: {{ worldData.minTeamSize === worldData.maxTeamSize ? worldData.maxTeamSize : worldData.minTeamSize + ' - ' + worldData.maxTeamSize }}
         </p>
       </div>
+
+      <UiBaseButton
+          v-if="worldData?.owner.id === auth.currentUser?.value?.id"
+          @click="handleReset"
+          :loading="gameState.isResetting.value"
+          :disabled="!gameState.worldData.value"
+          variant="outline"
+      >
+        Reset World
+      </UiBaseButton>
 
       <div class="flex gap-4 items-start">
         <!-- WebSocket Status -->
@@ -115,6 +151,37 @@ function handleReset() {
 
     <!-- Game Board -->
     <div v-else-if="gameState.worldData.value && gameState.squares.value.length > 0" class="flex flex-col items-center">
+
+      <!-- Player Stats -->
+      <div class="mb-4 p-4 bg-card container rounded-lg border border-border">
+        <h3 class="text-sm font-semibold text-card-foreground mb-3">Teams and players</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div
+              v-for="team in sortedTeams"
+              :key="team.id"
+              class="flex items-center gap-2 p-2 bg-background rounded border border-border"
+          >
+            <div
+                class="size-8 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold text-foreground"
+                :style="{ backgroundColor: teamColor.getTeamColor( team.color ) }"
+            >
+              <div class="bg-background/30 size-6 rounded flex items-center justify-center">
+<!--                calculate Number of squares all played by team-->
+                {{ gameState.squares.value.filter(square => square.owner && team.members.some(member => member.user.id === square.owner!.id)).length }}
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-foreground truncate">{{ team.name }}</p>
+              <p class="text-xs text-muted-foreground">
+                <span v-for="(member, index) in team.members" :key="member.user.id">
+                  {{ member.user.username }}<span v-if="index < team.members.length - 1">, </span>
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <GameWorldBoard
         :worldData="gameState.worldData.value"
         :squares="gameState.squares.value"
@@ -122,16 +189,6 @@ function handleReset() {
         :errorMessage="gameState.errorMessage.value"
         @square-click="handleSquareClick"
       />
-
-      <UiBaseButton
-        @click="handleReset"
-        :loading="gameState.isResetting.value"
-        :disabled="!gameState.worldData.value"
-        variant="outline"
-        class="mt-6"
-      >
-        Reset World
-      </UiBaseButton>
     </div>
 
     <!-- Loading State -->
