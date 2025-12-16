@@ -86,7 +86,6 @@ function getTeamColor( teamColorKey: string ): string {
 
 // Handle world reset
 function handleReset() {
-
   gameState.resetWorldState()
 }
 </script>
@@ -109,6 +108,7 @@ function handleReset() {
       </div>
 
       <UiBaseButton
+          v-if="worldData?.owner.id === auth.currentUser?.value?.id"
           @click="handleReset"
           :loading="gameState.isResetting.value"
           :disabled="!gameState.worldData.value"
