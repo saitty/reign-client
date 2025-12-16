@@ -68,7 +68,6 @@ function handleSquareClick(square: Square) {
     return
   }
 
-  console.log('Current user:', auth.currentUser.value)
   if ( square.owner?.id === auth.currentUser.value?.id ) {
     // Upgrade defense bonus if owned by current user
     gameState.defendSquare(square)

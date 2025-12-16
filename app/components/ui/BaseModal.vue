@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 
 const props = defineProps<{
   modelValue?: boolean
@@ -26,8 +26,11 @@ const confirm = () => {
   emit('confirm')
 }
 
-const open = () => {
-  dialogRef.value?.showModal()
+const open = async () => {
+  await nextTick()
+  if (dialogRef.value) {
+    dialogRef.value.showModal()
+  }
   emit('update:modelValue', true)
 }
 
@@ -38,12 +41,27 @@ watch(() => props.modelValue, (newValue) => {
   } else if (!newValue && dialogRef.value?.open) {
     dialogRef.value?.close()
   }
+}, { immediate: true })
+
+// Also handle initial value on mount
+onMounted(() => {
+  if (props.modelValue && !dialogRef.value?.open) {
+    open()
+  }
 })
 
 // Handle native dialog close event (e.g., ESC key)
 const handleDialogClose = () => {
   emit('update:modelValue', false)
   emit('close')
+}
+
+// Handle backdrop click to close
+const handleBackdropClick = (event: MouseEvent) => {
+  // Only close if clicking on the dialog backdrop (not the content)
+  if (event.target === dialogRef.value) {
+    close()
+  }
 }
 
 // Expose methods for parent components
@@ -58,6 +76,7 @@ defineExpose({
     ref="dialogRef"
     class="backdrop:bg-foreground/50 dark:backdrop:bg-background/50 bg-card rounded-lg shadow-xl border-2 border-border p-0 max-w-md w-full"
     @close="handleDialogClose"
+    @click="handleBackdropClick"
   >
     <div class="flex flex-col">
       <!-- Header -->

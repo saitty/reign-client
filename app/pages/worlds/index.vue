@@ -7,7 +7,58 @@ import type { World } from '~~/types/database';
 
 const auth = useAuth();
 
-const { data, error, pending } = useApiFetch<World[]>('/api/worlds')
+const { data, error, pending, refresh } = useApiFetch<World[]>('/api/worlds')
+
+// Modal state
+const showJoinModal = ref(false)
+const selectedWorld = ref<World | null>(null)
+const isLeaving = ref<string | null>(null) // Track which world is being left
+
+const gameApi = useGameApi()
+
+// Check if user is in a team for a specific world
+const isUserInTeam = (world: World) => {
+  const userId = auth.currentUser.value?.id
+  if (!userId) return false
+
+  return world.teams.some(team =>
+    team.members.some(member => member.user.id === userId)
+  )
+}
+
+// Open join modal
+const openJoinModal = (world: World) => {
+  selectedWorld.value = world
+  showJoinModal.value = true
+}
+
+// Handle successful join
+const handleJoined = async () => {
+  // after joining, view the world
+  if (selectedWorld.value) {
+    showJoinModal.value = false
+    await refresh()
+    // Navigate to the world page
+    window.location.href = `/worlds/${selectedWorld.value.slug}`
+  }
+}
+
+// Leave team
+const handleLeaveTeam = async (world: World) => {
+  if (!confirm(`Are you sure you want to leave your team in ${world.name}?`)) {
+    return
+  }
+
+  try {
+    isLeaving.value = world.id
+    await gameApi.leaveTeam(world.slug)
+    await refresh()
+  } catch (error: any) {
+    alert(error?.data?.error || 'Failed to leave team')
+  } finally {
+    isLeaving.value = null
+  }
+}
 </script>
 
 <template>
@@ -54,12 +105,31 @@ const { data, error, pending } = useApiFetch<World[]>('/api/worlds')
             >
               View World
             </UiBaseButton>
+
             <UiBaseButton
+              v-if="!isUserInTeam(world)"
               variant="primary"
-              disabled
+              @click="openJoinModal(world)"
             >
               Join World
             </UiBaseButton>
+
+            <template v-else>
+              <UiBaseButton
+                variant="success"
+                disabled
+              >
+                Already Joined
+              </UiBaseButton>
+              <UiBaseButton
+                variant="danger"
+                :loading="isLeaving === world.id"
+                :disabled="isLeaving === world.id"
+                @click="handleLeaveTeam(world)"
+              >
+                Leave Team
+              </UiBaseButton>
+            </template>
             <UiBaseButton
               v-if="world.owner.id === auth.currentUser.value?.id"
               class="items-center flex"
@@ -72,6 +142,14 @@ const { data, error, pending } = useApiFetch<World[]>('/api/worlds')
         </UiCard>
       </template>
     </div>
+
+    <!-- Join World Modal -->
+    <GameJoinWorldModal
+      v-if="selectedWorld !== null"
+      v-model="showJoinModal"
+      :world="selectedWorld!"
+      @joined="handleJoined"
+    />
   </div>
 </template>
 

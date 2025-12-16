@@ -63,8 +63,7 @@ export const useGameState = () => {
       await gameApi.captureSquare(
         state.worldData.slug,
         square.x,
-        square.y,
-        auth.currentUser.value.id
+        square.y
       )
       // WebSocket will update the board
     } catch (error: any) {
@@ -101,8 +100,7 @@ export const useGameState = () => {
       await gameApi.defendSquare(
         state.worldData.slug,
         square.x,
-        square.y,
-        auth.currentUser.value.id
+        square.y
       )
       // WebSocket will update the board
     } catch (error: any) {
@@ -137,7 +135,7 @@ export const useGameState = () => {
 
     try {
       // Call backend - don't update UI yet, wait for WebSocket
-      await gameApi.resetWorld(state.worldData.slug, auth.currentUser.value.id)
+      await gameApi.resetWorld(state.worldData.slug)
       // WebSocket will update the board
     } catch (error: any) {
       state.isResetting = false
@@ -155,12 +153,25 @@ export const useGameState = () => {
    * Handle WebSocket message - server authoritative board updates
    */
   const handleWebSocketMessage = (message: {
-    type: 'SQUARE_CAPTURED' | 'SQUARE_DEFENDED' | 'WORLD_RESET'
+    type: 'SQUARE_CAPTURED' | 'SQUARE_DEFENDED' | 'WORLD_RESET' | 'TEAM_CREATED' | 'TEAM_JOINED' | 'PLAYER_LEFT' | 'USER_DELETED'
     board: Square[]
+    teams?: any[]
     playerId: string | null
   }) => {
+    console.log('[GameState] WebSocket message received:', message.type)
+    console.log('[GameState] Teams in message:', message.teams)
+    console.log('[GameState] Current worldData:', state.worldData)
+
     // Replace entire board state with server's authoritative state
     state.squares = message.board
+
+    // Update teams if included in the message
+    if (message.teams && state.worldData) {
+      console.log('[GameState] Updating teams from', state.worldData.teams.length, 'to', message.teams.length)
+      state.worldData.teams = message.teams
+      console.log('[GameState] Teams updated:', state.worldData.teams)
+    }
+
     state.isResetting = false
     state.isProcessing = false
   }
