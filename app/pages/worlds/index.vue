@@ -31,6 +31,11 @@ const isUserInTeam = (world: World) => {
   )
 }
 
+const isWorldFull = (world: World) => {
+  const totalMembers = world.teams.reduce((sum, team) => sum + team.members.length, 0)
+  return totalMembers >= world.maxPlayers
+}
+
 // Open join modal
 const openJoinModal = (world: World) => {
   selectedWorld.value = world
@@ -129,26 +134,19 @@ const handleLeaveTeam = async (world: World) => {
               v-if="!isUserInTeam(world)"
               variant="primary"
               @click="openJoinModal(world)"
+              :disabled="isWorldFull(world)"
             >
-              Join World
+              {{ isWorldFull(world) ? 'World Full' : 'Join World'}}
             </UiBaseButton>
-
-            <template v-else>
-              <UiBaseButton
-                variant="success"
-                disabled
-              >
-                Already Joined
-              </UiBaseButton>
-              <UiBaseButton
-                variant="danger"
-                :loading="isLeaving === world.id"
-                :disabled="isLeaving === world.id"
-                @click="handleLeaveTeam(world)"
-              >
-                Leave Team
-              </UiBaseButton>
-            </template>
+            <UiBaseButton
+                v-else
+              variant="danger"
+              :loading="isLeaving === world.id"
+              :disabled="isLeaving === world.id"
+              @click="handleLeaveTeam(world)"
+            >
+              Leave Team
+            </UiBaseButton>
             <UiBaseButton
               v-if="world.owner.id === auth.currentUser.value?.id"
               class="items-center flex"
