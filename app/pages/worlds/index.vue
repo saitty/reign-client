@@ -5,6 +5,8 @@ definePageMeta({
 
 import type { World } from '~~/types/database';
 
+const auth = useAuth();
+
 const { data, error, pending } = useApiFetch<World[]>('/api/worlds')
 </script>
 
@@ -45,12 +47,28 @@ const { data, error, pending } = useApiFetch<World[]>('/api/worlds')
               </dd>
             </dl>
           </div>
-          <UiBaseButton
-            class="mt-4 w-fit self-start"
-            @click="() => $router.push(`/worlds/${world.slug}`)"
-          >
-            Join World
-          </UiBaseButton>
+          <div class="col-span-2 flex gap-4 mt-4">
+            <UiBaseButton
+              variant="secondary"
+              @click="() => $router.push(`/worlds/${world.slug}`)"
+            >
+              View World
+            </UiBaseButton>
+            <UiBaseButton
+              variant="primary"
+              disabled
+            >
+              Join World
+            </UiBaseButton>
+            <UiBaseButton
+              v-if="world.owner.id === auth.currentUser.value?.id"
+              class="items-center flex"
+              variant="secondary"
+              disabled
+            >
+              <Icon name="mdi:settings" size="24"/>
+            </UiBaseButton>
+          </div>
         </UiCard>
       </template>
     </div>
