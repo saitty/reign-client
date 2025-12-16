@@ -23,15 +23,11 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const availableTeams = ref<Team[]>([])
 
-// Available colors
-const colors = [
-  { value: 'red', label: 'Red', class: 'bg-red-500' },
-  { value: 'blue', label: 'Blue', class: 'bg-blue-500' },
-  { value: 'green', label: 'Green', class: 'bg-green-500' },
-  { value: 'yellow', label: 'Yellow', class: 'bg-yellow-500' },
-  { value: 'purple', label: 'Purple', class: 'bg-purple-500' },
-  { value: 'teal', label: 'Teal', class: 'bg-teal-500' }
-]
+// Use the shared team color composable so colors come from a single source of truth
+const { getTeamColor, getTeamColors } = useTeamColor()
+
+// derive colors from composable
+const colors = getTeamColors()
 
 // Computed
 const usedColors = computed(() => {
@@ -39,7 +35,8 @@ const usedColors = computed(() => {
 })
 
 const availableColors = computed(() => {
-  return colors.filter(c => !usedColors.value.includes(c.value))
+  // colors from composable have `key` and `name`
+  return colors.filter(c => !usedColors.value.includes(c.key as any))
 })
 
 const canCreateTeam = computed(() => {
@@ -79,8 +76,7 @@ const loadAvailableTeams = async () => {
   try {
     isLoading.value = true
     errorMessage.value = ''
-    const teams = await gameApi.getAvailableTeams(props.world.slug) as Team[]
-    availableTeams.value = teams
+    availableTeams.value = await gameApi.getAvailableTeams(props.world.slug) as Team[]
   } catch (error: any) {
     errorMessage.value = error?.data?.error || 'Failed to load available teams'
   } finally {
@@ -95,7 +91,8 @@ const selectMode = async (selectedMode: 'join' | 'create') => {
   if (selectedMode === 'join') {
     await loadAvailableTeams()
   } else if (selectedMode === 'create' && availableColors.value.length > 0) {
-    newTeamColor.value = availableColors.value[0].value
+    // use non-null assertion since we've checked length
+    newTeamColor.value = availableColors.value[0]!.key
   }
 }
 
@@ -121,26 +118,13 @@ const handleCreateTeam = async () => {
   try {
     isLoading.value = true
     errorMessage.value = ''
-    console.log('Creating team:', { slug: props.world.slug, name: newTeamName.value.trim(), color: newTeamColor.value })
-    const result = await gameApi.createTeam(props.world.slug, newTeamName.value.trim(), newTeamColor.value)
-    console.log('Team created successfully:', result)
+    await gameApi.createTeam(props.world.slug, newTeamName.value.trim(), newTeamColor.value)
     emit('joined')
     close()
   } catch (error: any) {
-    console.error('Error creating team:', error)
-    console.error('Error data:', error?.data)
-    console.error('Error message:', error?.message)
     errorMessage.value = error?.data?.error || error?.message || 'Failed to create team'
   } finally {
     isLoading.value = false
-  }
-}
-
-const handleConfirm = () => {
-  if (mode.value === 'join') {
-    handleJoinTeam()
-  } else if (mode.value === 'create') {
-    handleCreateTeam()
   }
 }
 
@@ -168,10 +152,8 @@ const getTeamMemberCount = (team: Team) => {
         @click="selectMode('join')"
         class="w-full p-4 border-2 border-border rounded-lg hover:bg-muted transition-colors text-left"
       >
-        <div class="font-semibold">Join Existing Team</div>
-        <div class="text-sm text-muted-foreground">
-          Join a team that has open slots
-        </div>
+        <span class="font-semibold block">Join Existing Team</span>
+        <span class="text-sm text-muted-foreground block">Join a team that has open slots</span>
       </button>
 
       <!-- Create New Team -->
@@ -181,13 +163,9 @@ const getTeamMemberCount = (team: Team) => {
         class="w-full p-4 border-2 border-border rounded-lg hover:bg-muted transition-colors text-left"
         :disabled="availableColors.length === 0"
       >
-        <div class="font-semibold">Create New Team</div>
-        <div class="text-sm text-muted-foreground">
-          Start your own team and choose a color
-        </div>
-        <div v-if="availableColors.length === 0" class="text-sm text-red-500 mt-1">
-          All colors are taken
-        </div>
+        <span class="font-semibold block">Create New Team</span>
+        <span class="text-sm text-muted-foreground block">Start your own team and choose a color</span>
+        <span v-if="availableColors.length === 0" class="text-sm text-destructive-foreground mt-1 block">All colors are taken</span>
       </button>
 
       <!-- No options available -->
@@ -205,7 +183,7 @@ const getTeamMemberCount = (team: Team) => {
         @click="mode = 'select'"
         class="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
       >
-        <span>←</span> Back
+        <span>←</span> <span class="block">Back</span>
       </button>
 
       <div v-if="isLoading" class="text-center py-8">
@@ -225,20 +203,17 @@ const getTeamMemberCount = (team: Team) => {
           class="w-full p-3 border-2 rounded-lg hover:bg-muted transition-colors text-left"
           :class="selectedTeamId === team.id ? 'border-primary bg-muted' : 'border-border'"
         >
-          <div class="flex items-center gap-2">
-            <div
-              class="w-4 h-4 rounded-full"
-              :class="`bg-${team.color}-500`"
-            ></div>
-            <div class="font-semibold">{{ team.name }}</div>
-          </div>
-          <div class="text-sm text-muted-foreground mt-1">
+          <span class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full" :style="{ backgroundColor: getTeamColor(team.color as any) }"></span>
+            <span class="font-semibold">{{ team.name }}</span>
+          </span>
+          <span class="text-sm text-muted-foreground mt-1 block">
             {{ getTeamMemberCount(team) }} / {{ world.maxTeamSize }} members
-          </div>
+          </span>
         </button>
       </div>
 
-      <div v-if="errorMessage" class="text-sm text-red-500">
+      <div v-if="errorMessage" class="text-sm text-destructive-foreground">
         {{ errorMessage }}
       </div>
 
@@ -268,7 +243,7 @@ const getTeamMemberCount = (team: Team) => {
         @click="mode = 'select'"
         class="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
       >
-        <span>←</span> Back
+        <span>←</span> <span class="block">Back</span>
       </button>
 
       <div>
@@ -296,25 +271,22 @@ const getTeamMemberCount = (team: Team) => {
         <div class="grid grid-cols-3 gap-2">
           <button
             v-for="color in availableColors"
-            :key="color.value"
-            @click="newTeamColor = color.value"
+            :key="color.key"
+            @click="newTeamColor = color.key"
             class="p-3 border-2 rounded-lg hover:bg-muted transition-colors flex items-center gap-2"
-            :class="newTeamColor === color.value ? 'border-primary bg-muted' : 'border-border'"
+            :class="newTeamColor === color.key ? 'border-primary bg-muted' : 'border-border'"
             :disabled="isLoading"
           >
-            <div
-              class="w-6 h-6 rounded-full"
-              :class="color.class"
-            ></div>
-            <span class="text-sm">{{ color.label }}</span>
+            <span class="w-6 h-6 rounded-full" :style="{ backgroundColor: getTeamColor(color.key as any) }"></span>
+            <span class="text-sm">{{ color.name }}</span>
           </button>
         </div>
-        <p v-if="availableColors.length === 0" class="text-xs text-red-500 mt-2">
+        <p v-if="availableColors.length === 0" class="text-xs text-destructive-foreground mt-2">
           All colors are taken
         </p>
       </div>
 
-      <div v-if="errorMessage" class="text-sm text-red-500">
+      <div v-if="errorMessage" class="text-sm text-destructive-foreground">
         {{ errorMessage }}
       </div>
 

@@ -26,7 +26,6 @@ function getSquareColor(square: Square): string {
   if (!square || !square.owner) {
     return 'currentColor';  // Empty square
   }
-  const mode = (colorMode.value === 'light' || colorMode.value === 'dark') ? colorMode.value : 'dark';
 
   let colorKey;
   const team = (props.worldData as any).teams?.find((t: any) =>
@@ -40,7 +39,7 @@ function getSquareColor(square: Square): string {
     return 'currentColor'; // Default color if no team color found
   }
 
-  return teamColor.getTeamColor( colorKey, mode);
+  return teamColor.getTeamColor( colorKey);
 }
 
 // Handle square click

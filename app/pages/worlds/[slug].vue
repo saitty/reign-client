@@ -9,7 +9,6 @@ const route = useRoute()
 const auth = useAuth()
 const gameState = useGameState()
 const teamColor = useTeamColor()
-const colorMode = useColorMode()
 
 
 const slug = Array.isArray(route.params.slug) ? route.params.slug[0] : (route.params.slug ?? '')
@@ -46,6 +45,13 @@ watchEffect(() => {
   }
 })
 
+const sortedTeams = computed(() => {
+  if (!gameState.worldData.value?.teams) {
+    return []
+  }
+  return [...gameState.worldData.value.teams].sort((a, b) => a.name.localeCompare(b.name))
+})
+
 function isPlayerInTeam(): boolean {
   if (!auth.currentUser.value || !gameState.worldData.value?.teams) {
     return false
@@ -75,12 +81,6 @@ function handleSquareClick(square: Square) {
     // Try to capture square
     gameState.captureSquare(square)
   }
-}
-
-function getTeamColor( teamColorKey: string ): string {
-  const mode = (colorMode.value === 'light' || colorMode.value === 'dark') ? colorMode.value : 'dark';
-
-  return teamColor.getTeamColor( teamColorKey as any, mode )
 }
 
 // Handle world reset
@@ -157,13 +157,13 @@ function handleReset() {
         <h3 class="text-sm font-semibold text-card-foreground mb-3">Teams and players</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div
-              v-for="team in gameState.worldData.value.teams"
+              v-for="team in sortedTeams"
               :key="team.id"
               class="flex items-center gap-2 p-2 bg-background rounded border border-border"
           >
             <div
                 class="size-8 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold text-foreground"
-                :style="{ backgroundColor: getTeamColor( team.color ) }"
+                :style="{ backgroundColor: teamColor.getTeamColor( team.color ) }"
             >
               <div class="bg-background/30 size-6 rounded flex items-center justify-center">
 <!--                calculate Number of squares all played by team-->

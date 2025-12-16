@@ -5,7 +5,8 @@ definePageMeta({
 
 import type { World } from '~~/types/database';
 
-const auth = useAuth();
+const auth = useAuth()
+const teamColor = useTeamColor()
 
 const { data, error, pending, refresh } = useApiFetch<World[]>('/api/worlds')
 
@@ -15,6 +16,10 @@ const selectedWorld = ref<World | null>(null)
 const isLeaving = ref<string | null>(null) // Track which world is being left
 
 const gameApi = useGameApi()
+
+const sortedTeams = (world: World) => {
+  return [...world.teams].sort((a, b) => a.name.localeCompare(b.name))
+}
 
 // Check if user is in a team for a specific world
 const isUserInTeam = (world: World) => {
@@ -87,18 +92,32 @@ const handleLeaveTeam = async (world: World) => {
             <p class="text-muted-foreground">Team Size: {{ world.minTeamSize === world.maxTeamSize ? world.maxTeamSize : world.minTeamSize + ' - ' + world.maxTeamSize }}</p>
             <p class="text-muted-foreground">Created At: {{ world.createdAt }}</p>
           </div>
-          <div>
-            <p>Teams:</p>
-            <dl v-for="team in world.teams" :key="team.id">
-              <dt class="text-sm font-medium text-foreground pl-4">{{ team.name }}</dt>
-              <dd v-for="member in team.members" :key="member.id"
-                class="text-sm text-secondary-foreground pl-8"
+          <div class="p-4 bg-card rounded-lg border border-border">
+            <h3 class="text-sm font-semibold text-card-foreground mb-3">Teams and players</h3>
+            <div class="grid gap-3">
+              <div
+                  v-for="team in sortedTeams(world)"
+                  :key="team.id"
+                  class="flex items-center gap-2 p-2 bg-background rounded border border-border"
               >
-                 - {{ member.user.username }}
-              </dd>
-            </dl>
+                <div
+                    class="size-8 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold text-foreground"
+                    :style="{ backgroundColor: teamColor.getTeamColor( team.color ) }"
+                >
+                  <div class="bg-background/30 size-6 rounded flex items-center justify-center"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium text-foreground truncate">{{ team.name }}</p>
+                  <p class="text-xs text-muted-foreground">
+                <span v-for="(member, index) in team.members" :key="member.user.id">
+                  {{ member.user.username }}<span v-if="index < team.members.length - 1">, </span>
+                </span>
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="col-span-2 flex gap-4 mt-4">
+          <div class="md:col-span-2 flex flex-col md:flex-row gap-4 mt-4">
             <UiBaseButton
               variant="secondary"
               @click="() => $router.push(`/worlds/${world.slug}`)"
