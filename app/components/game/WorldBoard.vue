@@ -21,6 +21,9 @@ const emit = defineEmits<{
 
 const isHexGrid = ref(true);
 
+// Hover state (the currently hovered square)
+const hoveredSquare = ref<Square | null>(null);
+
 // Get square color based on owner
 function getSquareColor(square: Square): string {
   if (!square || !square.owner) {
@@ -48,6 +51,60 @@ function handleSquareClick(square: Square){
     emit('square-click', square);
   }
 }
+
+// Hover handlers
+function handleMouseEnter(square: Square) {
+  hoveredSquare.value = square;
+}
+function handleMouseLeave() {
+  hoveredSquare.value = null;
+}
+
+// Provide neighbor detection (returns array of coordinate pairs)
+function getNeighborCoordsForSquare(square: Square, hex: boolean) : Array<{x:number,y:number}> {
+  if (!square) return [];
+  const x = square.x;
+  const y = square.y;
+
+  if (!hex) {
+    return [
+      { x: x + 1, y: y }, { x: x - 1, y: y }, { x: x, y: y + 1 }, { x: x, y: y - 1 },
+        // diagonal neighbors
+      // { x: x + 1, y: y + 1 }, { x: x + 1, y: y - 1 }, { x: x - 1, y: y + 1 }, { x: x - 1, y: y - 1 }
+    ];
+  }
+
+  // hex grid using odd-r horizontal layout offsets (rows shifted on odd rows)
+  // Source: odd-r offset neighbor tables (compatible with the layout used in getHexPoints)
+  const evenRow = (y % 2) === 0;
+  if (evenRow) {
+    return [
+      { x: x + 1, y: y }, { x: x, y: y - 1 }, { x: x - 1, y: y - 1 }, { x: x - 1, y: y }, { x: x - 1, y: y + 1 }, { x: x, y: y + 1 }
+    ];
+  } else {
+    return [
+      { x: x + 1, y: y }, { x: x + 1, y: y - 1 }, { x: x, y: y - 1 }, { x: x - 1, y: y }, { x: x, y: y + 1 }, { x: x + 1, y: y + 1 }
+    ];
+  }
+  // fallback (shouldn't be reached)
+  return [];
+}
+
+// Compute a set of hovered neighbor IDs for fast lookup in template
+const hoveredNeighborIds = computed(() => {
+  const s = new Set<string | number>();
+  if (!hoveredSquare.value) return s;
+
+  // include the hovered square itself
+  s.add(hoveredSquare.value.id as any);
+
+  const neigh = getNeighborCoordsForSquare(hoveredSquare.value, isHexGrid.value);
+  for (const n of neigh) {
+    const found = props.squares.find((sq) => sq.x === n.x && sq.y === n.y);
+    if (found) s.add(found.id as any);
+  }
+  return s;
+});
 
 const squareSize = 100;
 const squareBorder = 10;
@@ -209,17 +266,29 @@ function getHexPoints(square: Square, borderOffset = 0): string {
           :key="square.id"
         >
           <template v-if="isHexGrid">
+            <!-- Highlight overlay for hovered / neighbor (subtle white overlay) -->
             <polygon
-
-              class="hover:stroke-foreground transition-colors stroke-background"
+              class="stroke-foreground"
               :points="getHexPoints(square)"
               :stroke-width="squareBorder"
+              :style="{
+                opacity: hoveredNeighborIds.has(square.id) ? (hoveredSquare?.id === square.id ? 1 : 0.25) : 0,
+                pointerEvents: 'none',
+                transition: 'opacity 300ms ease'
+              }"
+            />
+
+            <polygon
+              :points="getHexPoints(square)"
               :fill="getSquareColor(square)"
               @click="handleSquareClick(square)"
+              @mouseenter="handleMouseEnter(square)"
+              @mouseleave="handleMouseLeave"
               :style="{
                 cursor: isProcessing ? 'wait' : 'pointer'
               }"
             />
+
             <!-- Defense bonus indicator -->
             <polygon
               v-if="square.defenseBonus === 1"
@@ -230,8 +299,22 @@ function getHexPoints(square: Square, borderOffset = 0): string {
             />
           </template>
           <template v-else>
+            <!-- Highlight overlay for hovered / neighbor (subtle white overlay) -->
             <rect
-              class="hover:stroke-foreground transition-colors stroke-background"
+                class="stroke-foreground"
+                :x="((square.x) * squareSize)+squareBorder"
+                :y="((square.y) * squareSize)+squareBorder"
+                :width="squareSize - squareBorder"
+                :height="squareSize - squareBorder"
+                :stroke-width="squareBorder"
+                :style="{
+                  opacity: hoveredNeighborIds.has(square.id) ? (hoveredSquare?.id === square.id ? 1 : 0.25) : 0,
+                  pointerEvents: 'none',
+                  transition: 'opacity 300ms ease'
+                }"
+            />
+
+            <rect
               :x="((square.x) * squareSize)+squareBorder"
               :y="((square.y) * squareSize)+squareBorder"
               :width="squareSize - squareBorder"
@@ -239,10 +322,13 @@ function getHexPoints(square: Square, borderOffset = 0): string {
               :stroke-width="squareBorder"
               :fill="getSquareColor(square)"
               @click="handleSquareClick(square)"
+              @mouseenter="handleMouseEnter(square)"
+              @mouseleave="handleMouseLeave"
               :style="{
                 cursor: isProcessing ? 'wait' : 'pointer'
               }"
             />
+
             <!-- Defense bonus indicator -->
             <rect
               v-if="square.defenseBonus === 1"
@@ -260,3 +346,4 @@ function getHexPoints(square: Square, borderOffset = 0): string {
     </div>
   </div>
 </template>
+
