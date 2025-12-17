@@ -8,6 +8,7 @@ const props = defineProps<{
     name: string;
     slug: string;
     boardSize: number;
+    boardType: 'SQUARE' | 'HEXAGON';
     maxPlayers: number;
   };
   squares: Square[];
@@ -19,7 +20,9 @@ const emit = defineEmits<{
   'square-click': [square: Square];
 }>();
 
-const isHexGrid = ref(true);
+const isHexGrid = computed(() => {
+  return props.worldData.boardType === 'HEXAGON';
+});
 
 // Hover state (the currently hovered square)
 const hoveredSquare = ref<Square | null>(null);
@@ -244,13 +247,6 @@ function getHexPoints(square: Square, borderOffset = 0): string {
     <!-- Error message -->
     <div v-if="errorMessage" class="bg-destructive border border-destructive text-destructive-foreground px-4 py-3 rounded mb-4" role="alert">
       <span class="block sm:inline">{{ errorMessage }}</span>
-    </div>
-
-    <div>
-      <label class="inline-flex items-center mb-2 cursor-pointer">
-        <input type="checkbox" class="form-checkbox" v-model="isHexGrid" />
-        <span class="ml-2">Use Hex Grid</span>
-      </label>
     </div>
 
     <!-- Board Container with scroll -->

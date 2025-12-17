@@ -28,6 +28,7 @@ export interface World {
     name: string;
     owner: User;
     teams: Team[];
+    boardType: 'SQUARE' | 'HEXAGON';
     boardSize: number;
     maxPlayers: number;
     maxTeams: number;

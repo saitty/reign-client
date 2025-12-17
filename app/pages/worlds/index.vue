@@ -91,6 +91,7 @@ const handleLeaveTeam = async (world: World) => {
               <h2 class="text-xl">{{ world.name }}</h2>
             </NuxtLink>
             <p class="text-muted-foreground">Owner: {{ world.owner.username }}</p>
+            <p class="text-muted-foreground">Board Type: {{ world.boardType }}</p>
             <p class="text-muted-foreground">Board Size: {{ world.boardSize }}</p>
             <p class="text-muted-foreground">Max Players: {{ world.maxPlayers }}</p>
             <p class="text-muted-foreground">Number of teams: {{ world.minTeams === world.maxTeams ? world.maxTeams : world.minTeams + ' - ' + world.maxTeams }}</p>
