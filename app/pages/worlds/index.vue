@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import dayjs from "dayjs";
+import relativeTime from 'dayjs/plugin/relativeTime'
+
+dayjs.extend(relativeTime)
+
+
 definePageMeta({
   middleware: 'auth'
 })
@@ -96,7 +102,7 @@ const handleLeaveTeam = async (world: World) => {
             <p class="text-muted-foreground">Max Players: {{ world.maxPlayers }}</p>
             <p class="text-muted-foreground">Number of teams: {{ world.minTeams === world.maxTeams ? world.maxTeams : world.minTeams + ' - ' + world.maxTeams }}</p>
             <p class="text-muted-foreground">Team Size: {{ world.minTeamSize === world.maxTeamSize ? world.maxTeamSize : world.minTeamSize + ' - ' + world.maxTeamSize }}</p>
-            <p class="text-muted-foreground">Created At: {{ world.createdAt }}</p>
+            <p class="text-muted-foreground">Created At: {{ dayjs(world.createdAt).fromNow() }}</p>
           </div>
           <div class="p-4 bg-card rounded-lg border border-border">
             <h3 class="text-sm font-semibold text-card-foreground mb-3">Teams and players</h3>
