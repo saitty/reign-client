@@ -17,21 +17,23 @@ const handleLogout = async () => {
           Reign
         </NuxtLink>
 
-        <select v-model="$colorMode.preference" class="bg-primary text-foreground">
-          <option value="system">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-
         <ul class="flex gap-2 items-center">
+
           <li v-if="isAuthenticated">
             <NuxtLink to="/worlds" class="items-center flex gap-1 hover:bg-secondary rounded-md pl-1.5 pr-2 py-1 w-fit">
               <Icon name="mdi:map" size="16" />
               Worlds
             </NuxtLink>
           </li>
+        </ul>
+        <ul class="flex gap-2 items-center">
 
           <template v-if="isAuthenticated">
+            <select v-model="$colorMode.preference" class="bg-primary text-foreground">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
             <li class="flex items-center gap-2 px-3 py-1 bg-primary-foreground/10 rounded-md">
               <Icon name="mdi:account" size="16" />
               <span class="text-sm">{{ currentUser?.username }}</span>
