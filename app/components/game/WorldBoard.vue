@@ -249,6 +249,13 @@ function getHexPoints(square: Square, borderOffset = 0): string {
       <span class="block sm:inline">{{ errorMessage }}</span>
     </div>
 
+    <div>
+      <label class="inline-flex items-center mb-2 cursor-pointer">
+        <input type="checkbox" class="form-checkbox" v-model="isHexGrid" />
+        <span class="ml-2">Use Hex Grid</span>
+      </label>
+    </div>
+
     <!-- Board Container with scroll -->
     <div class="w-full max-w-full overflow-auto border border-border rounded-lg">
       <svg
