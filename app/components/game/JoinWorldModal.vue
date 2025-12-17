@@ -281,12 +281,12 @@ const getTeamMemberCount = (team: Team) => {
             <span class="text-sm">{{ color.name }}</span>
           </button>
         </div>
-        <p v-if="availableColors.length === 0" class="text-xs text-destructive-foreground mt-2">
+        <p v-if="availableColors.length === 0" class="text-xs text- mt-2">
           All colors are taken
         </p>
       </div>
 
-      <div v-if="errorMessage" class="text-sm text-destructive-foreground">
+      <div v-if="errorMessage" class="text-sm text-destructive-foreground bg-destructive p-2 rounded">
         {{ errorMessage }}
       </div>
 

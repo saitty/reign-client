@@ -69,9 +69,12 @@ export const useGameState = () => {
     } catch (error: any) {
       state.isProcessing = false
 
-      if (error.response?.status === 400) {
-        state.errorMessage = 'Invalid move! You can only capture adjacent squares.'
-      } else if (error.response?.status === 404) {
+      // Extract error message from server response
+      const serverError = error.data?.error || error.response?.data?.error
+
+      if (serverError) {
+        state.errorMessage = serverError
+      } else if (error.response?.status === 404 || error.statusCode === 404) {
         state.errorMessage = 'Square not found.'
       } else {
         state.errorMessage = error.message || 'Failed to capture square. Please try again.'
@@ -106,9 +109,12 @@ export const useGameState = () => {
     } catch (error: any) {
       state.isProcessing = false
 
-      if (error.response?.status === 400) {
-        state.errorMessage = 'Invalid move! You can only defend your own squares.'
-      } else if (error.response?.status === 404) {
+      // Extract error message from server response
+      const serverError = error.data?.error || error.response?.data?.error
+
+      if (serverError) {
+        state.errorMessage = serverError
+      } else if (error.response?.status === 404 || error.statusCode === 404) {
         state.errorMessage = 'Square not found.'
       } else {
         state.errorMessage = error.message || 'Failed to defend square. Please try again.'
@@ -141,7 +147,12 @@ export const useGameState = () => {
       state.isResetting = false
       state.isProcessing = false
 
-      if (error.response?.status === 404) {
+      // Extract error message from server response
+      const serverError = error.data?.error || error.response?.data?.error
+
+      if (serverError) {
+        state.errorMessage = serverError
+      } else if (error.response?.status === 404 || error.statusCode === 404) {
         state.errorMessage = 'World not found.'
       } else {
         state.errorMessage = error.message || 'Failed to reset world. Please try again.'
