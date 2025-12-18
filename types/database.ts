@@ -36,6 +36,7 @@ export interface World {
     maxTeamSize: number;
     minTeamSize: number;
     allowPlayerTeamCreation: boolean;
+    public: boolean;  // Note: Java's isPublic field is serialized as "public" by Jackson
     createdAt: string;
 }
 

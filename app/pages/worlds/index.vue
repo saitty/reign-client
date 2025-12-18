@@ -20,8 +20,13 @@ const { data, error, pending, refresh } = useApiFetch<World[]>('/api/worlds')
 const showJoinModal = ref(false)
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
+const showJoinPrivateModal = ref(false)
 const selectedWorld = ref<World | null>(null)
 const isLeaving = ref<string | null>(null) // Track which world is being left
+const privateWorldSlug = ref('')
+const privateWorldError = ref('')
+const isLoadingPrivateWorld = ref(false)
+const isDeleting = ref<string | null>(null) // Track which world is being deleted
 
 const gameApi = useGameApi()
 
@@ -96,6 +101,66 @@ const handleWorldSuccess = async () => {
   selectedWorld.value = null
   await refresh()
 }
+
+// Open join private modal
+const openJoinPrivateModal = () => {
+  privateWorldSlug.value = ''
+  privateWorldError.value = ''
+  showJoinPrivateModal.value = true
+}
+
+// Handle join private world
+const handleJoinPrivateWorld = async () => {
+  if (!privateWorldSlug.value.trim()) {
+    privateWorldError.value = 'Please enter a world slug'
+    return
+  }
+
+  try {
+    isLoadingPrivateWorld.value = true
+    privateWorldError.value = ''
+
+    // Try to fetch the world to see if it exists
+    const world = await gameApi.getWorld(privateWorldSlug.value.trim())
+
+    // Redirect to the world page
+    navigateTo(`/worlds/${world.slug}`)
+  } catch (error: any) {
+    privateWorldError.value = error?.data?.error || 'World not found'
+  } finally {
+    isLoadingPrivateWorld.value = false
+  }
+}
+
+// Copy world link to clipboard
+const copyWorldLink = async (world: World) => {
+  const url = `${window.location.origin}/worlds/${world.slug}`
+  try {
+    await navigator.clipboard.writeText(url)
+    alert('World link copied to clipboard!')
+  } catch (error) {
+    alert('Failed to copy link')
+  }
+}
+
+// Delete world
+const handleDeleteWorld = async (world: World) => {
+  const confirmMessage = `Are you sure you want to delete "${world.name}"?\n\nThis will:\n- Delete the world permanently\n- Remove all teams and their members\n- Clear the entire board\n\nThis action cannot be undone.`
+
+  if (!confirm(confirmMessage)) {
+    return
+  }
+
+  try {
+    isDeleting.value = world.id
+    await gameApi.deleteWorld(world.slug)
+    await refresh()
+  } catch (error: any) {
+    alert(error?.data?.error || 'Failed to delete world')
+  } finally {
+    isDeleting.value = null
+  }
+}
 </script>
 
 <template>
@@ -105,12 +170,20 @@ const handleWorldSuccess = async () => {
   <div class="container px-4 py-6">
     <div class="flex justify-between items-center mb-4">
       <h1 class="text-lg">Worlds</h1>
-      <UiBaseButton
-        variant="primary"
-        @click="openCreateModal"
-      >
-        Create World
-      </UiBaseButton>
+      <div class="flex gap-2">
+        <UiBaseButton
+          variant="outline"
+          @click="openJoinPrivateModal"
+        >
+          Join Private World
+        </UiBaseButton>
+        <UiBaseButton
+          variant="primary"
+          @click="openCreateModal"
+        >
+          Create World
+        </UiBaseButton>
+      </div>
     </div>
     <div class="grid grid-cols-1 gap-4 mt-4">
       <template v-if="pending">
@@ -122,9 +195,17 @@ const handleWorldSuccess = async () => {
       <template v-else-if="data">
         <UiCard v-for="world in data" :key="world.id" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
           <div>
-            <NuxtLink :to="`/worlds/${world.slug}`">
-              <h2 class="text-xl">{{ world.name }}</h2>
-            </NuxtLink>
+            <div class="flex items-center gap-2">
+              <NuxtLink :to="`/worlds/${world.slug}`">
+                <h2 class="text-xl">{{ world.name }}</h2>
+              </NuxtLink>
+              <span
+                v-if="!world.public"
+                class="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded"
+              >
+                Private
+              </span>
+            </div>
             <p class="text-muted-foreground">Owner: {{ world.owner.username }}</p>
             <p class="text-muted-foreground">Board Type: {{ world.boardType }}</p>
             <p class="text-muted-foreground">Board Size: {{ world.boardSize }}</p>
@@ -188,9 +269,30 @@ const handleWorldSuccess = async () => {
               v-if="world.owner.id === auth.currentUser.value?.id"
               class="items-center flex"
               variant="secondary"
+              @click="copyWorldLink(world)"
+              title="Copy world link"
+            >
+              <Icon name="mdi:link-variant" size="24"/>
+            </UiBaseButton>
+            <UiBaseButton
+              v-if="world.owner.id === auth.currentUser.value?.id"
+              class="items-center flex"
+              variant="secondary"
               @click="openEditModal(world)"
+              title="Edit world settings"
             >
               <Icon name="mdi:settings" size="24"/>
+            </UiBaseButton>
+            <UiBaseButton
+              v-if="world.owner.id === auth.currentUser.value?.id"
+              class="items-center flex"
+              variant="secondary"
+              @click="handleDeleteWorld(world)"
+              :loading="isDeleting === world.id"
+              :disabled="isDeleting === world.id"
+              title="Delete world"
+            >
+              <Icon name="mdi:delete" size="24"/>
             </UiBaseButton>
           </div>
         </UiCard>
@@ -220,6 +322,58 @@ const handleWorldSuccess = async () => {
       :world="selectedWorld!"
       @success="handleWorldSuccess"
     />
+
+    <!-- Join Private World Modal -->
+    <UiBaseModal
+      v-model="showJoinPrivateModal"
+      title="Join Private World"
+      @close="showJoinPrivateModal = false"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-muted-foreground">
+          Enter the slug of the private world you want to join
+        </p>
+
+        <div>
+          <label for="private-world-slug" class="block text-sm font-medium mb-1">
+            World Slug
+          </label>
+          <input
+            id="private-world-slug"
+            v-model="privateWorldSlug"
+            type="text"
+            placeholder="my-private-world"
+            class="w-full px-3 py-2 border-2 border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+            :disabled="isLoadingPrivateWorld"
+            @keyup.enter="handleJoinPrivateWorld"
+          />
+        </div>
+
+        <div v-if="privateWorldError" class="text-sm text-destructive-foreground bg-destructive p-3 rounded">
+          {{ privateWorldError }}
+        </div>
+
+        <div class="flex gap-2 pt-4">
+          <UiBaseButton
+            variant="outline"
+            @click="showJoinPrivateModal = false"
+            class="flex-1"
+            :disabled="isLoadingPrivateWorld"
+          >
+            Cancel
+          </UiBaseButton>
+          <UiBaseButton
+            variant="primary"
+            @click="handleJoinPrivateWorld"
+            :disabled="isLoadingPrivateWorld || !privateWorldSlug.trim()"
+            :loading="isLoadingPrivateWorld"
+            class="flex-1"
+          >
+            Join World
+          </UiBaseButton>
+        </div>
+      </div>
+    </UiBaseModal>
   </div>
 </template>
 

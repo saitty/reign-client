@@ -48,6 +48,11 @@ const canJoinExistingTeam = computed(() => {
   return availableTeams.value.length > 0
 })
 
+const isWorldFull = computed(() => {
+  const totalMembers = props.world.teams.reduce((sum, team) => sum + team.members.length, 0)
+  return totalMembers >= props.world.maxPlayers
+})
+
 const isFormValid = computed(() => {
   if (mode.value === 'join') {
     return selectedTeamId.value !== null
@@ -142,13 +147,19 @@ const getTeamMemberCount = (team: Team) => {
   >
     <!-- Mode Selection -->
     <div v-if="mode === 'select'" class="space-y-4">
-      <p class="text-sm text-muted-foreground">
+      <!-- World Full Message -->
+      <div v-if="isWorldFull" class="bg-yellow-500/10 border border-yellow-500 text-yellow-700 dark:text-yellow-300 px-4 py-3 rounded-lg">
+        <h3 class="font-bold text-sm mb-1">World Full</h3>
+        <p class="text-sm">This world has reached its maximum capacity of {{ world.maxPlayers }} players.</p>
+      </div>
+
+      <p v-else class="text-sm text-muted-foreground">
         Choose how you want to join {{ world.name }}
       </p>
 
       <!-- Join Existing Team -->
       <button
-        v-if="canJoinExistingTeam || world.teams.length > 0"
+        v-if="!isWorldFull && (canJoinExistingTeam || world.teams.length > 0)"
         @click="selectMode('join')"
         class="w-full p-4 border-2 border-border rounded-lg hover:bg-muted transition-colors text-left"
       >
@@ -158,7 +169,7 @@ const getTeamMemberCount = (team: Team) => {
 
       <!-- Create New Team -->
       <button
-        v-if="canCreateTeam"
+        v-if="!isWorldFull && canCreateTeam"
         @click="selectMode('create')"
         class="w-full p-4 border-2 border-border rounded-lg hover:bg-muted transition-colors text-left"
         :disabled="availableColors.length === 0"
@@ -169,7 +180,7 @@ const getTeamMemberCount = (team: Team) => {
       </button>
 
       <!-- No options available -->
-      <div v-if="!canJoinExistingTeam && !canCreateTeam" class="text-center text-muted-foreground py-4">
+      <div v-if="!isWorldFull && !canJoinExistingTeam && !canCreateTeam" class="text-center text-muted-foreground py-4">
         <p>No teams available to join.</p>
         <p v-if="!world.allowPlayerTeamCreation" class="text-sm mt-2">
           Team creation is disabled for this world.

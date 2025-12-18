@@ -47,7 +47,7 @@ watch(() => props.modelValue, (isOpen) => {
       maxTeamSize: props.world.maxTeamSize,
       minTeamSize: props.world.minTeamSize,
       allowPlayerTeamCreation: props.world.allowPlayerTeamCreation,
-      isPublic: true
+      isPublic: props.world.public
     }
   } else if (isOpen && props.mode === 'create') {
     resetForm()
@@ -310,32 +310,23 @@ const generateSlug = () => {
         />
       </div>
 
-      <!-- Allow Player Team Creation -->
-      <div class="flex items-center gap-2">
-        <input
-          id="allow-player-team-creation"
-          v-model="formData.allowPlayerTeamCreation"
-          type="checkbox"
-          class="w-4 h-4"
-          :disabled="isLoading"
-        />
-        <label for="allow-player-team-creation" class="text-sm font-medium">
-          Allow players to create teams
-        </label>
-      </div>
-
       <!-- Public -->
-      <div class="flex items-center gap-2">
-        <input
-          id="is-public"
-          v-model="formData.isPublic"
-          type="checkbox"
-          class="w-4 h-4"
-          :disabled="isLoading"
-        />
-        <label for="is-public" class="text-sm font-medium">
-          Public world (visible to all players)
-        </label>
+      <div>
+        <div class="flex items-center gap-2">
+          <input
+            id="is-public"
+            v-model="formData.isPublic"
+            type="checkbox"
+            class="w-4 h-4"
+            :disabled="isLoading"
+          />
+          <label for="is-public" class="text-sm font-medium">
+            Public world
+          </label>
+        </div>
+        <p class="text-xs text-muted-foreground mt-1 ml-6">
+          {{ formData.isPublic ? 'This world will be visible in the worlds list' : 'This world can only be accessed via direct link' }}
+        </p>
       </div>
 
       <!-- Error Message -->
