@@ -306,7 +306,7 @@ const handleDeleteWorld = async (world: World) => {
         </div>
 
         <!-- Hide Full Servers Checkbox -->
-        <div class="flex items-end">
+        <div class="flex items-end md:pb-3">
           <label class="flex items-center gap-2 cursor-pointer">
             <input
               v-model="hideFullServers"
