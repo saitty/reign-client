@@ -1,4 +1,4 @@
-import type { Square, World } from '~~/types/database'
+import type { Square, World, CreateWorldRequest } from '~~/types/database'
 
 export const useGameApi = () => {
   const config = useRuntimeConfig()
@@ -132,6 +132,41 @@ export const useGameApi = () => {
     })
   }
 
+  /**
+   * Create a new world
+   */
+  const createWorld = async (request: CreateWorldRequest): Promise<World> => {
+    return await $fetch<World>('/api/worlds', {
+      baseURL,
+      method: 'POST',
+      credentials: 'include',
+      body: request
+    })
+  }
+
+  /**
+   * Update an existing world (owner only)
+   */
+  const updateWorld = async (slug: string, request: CreateWorldRequest): Promise<World> => {
+    return await $fetch<World>(`/api/worlds/${slug}`, {
+      baseURL,
+      method: 'PUT',
+      credentials: 'include',
+      body: request
+    })
+  }
+
+  /**
+   * Delete a world (owner only)
+   */
+  const deleteWorld = async (slug: string): Promise<void> => {
+    return await $fetch<void>(`/api/worlds/${slug}`, {
+      baseURL,
+      method: 'DELETE',
+      credentials: 'include'
+    })
+  }
+
   return {
     captureSquare,
     defendSquare,
@@ -143,6 +178,9 @@ export const useGameApi = () => {
     joinTeam,
     createTeam,
     checkTeamMembership,
-    leaveTeam
+    leaveTeam,
+    createWorld,
+    updateWorld,
+    deleteWorld
   }
 }

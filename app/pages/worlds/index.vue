@@ -18,6 +18,8 @@ const { data, error, pending, refresh } = useApiFetch<World[]>('/api/worlds')
 
 // Modal state
 const showJoinModal = ref(false)
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
 const selectedWorld = ref<World | null>(null)
 const isLeaving = ref<string | null>(null) // Track which world is being left
 
@@ -75,6 +77,25 @@ const handleLeaveTeam = async (world: World) => {
     isLeaving.value = null
   }
 }
+
+// Open create modal
+const openCreateModal = () => {
+  showCreateModal.value = true
+}
+
+// Open edit modal
+const openEditModal = (world: World) => {
+  selectedWorld.value = world
+  showEditModal.value = true
+}
+
+// Handle successful create/edit
+const handleWorldSuccess = async () => {
+  showCreateModal.value = false
+  showEditModal.value = false
+  selectedWorld.value = null
+  await refresh()
+}
 </script>
 
 <template>
@@ -82,7 +103,15 @@ const handleLeaveTeam = async (world: World) => {
     <title>Worlds | Reign</title>
   </Head>
   <div class="container px-4 py-6">
-    <h1 class="text-lg">Worlds</h1>
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-lg">Worlds</h1>
+      <UiBaseButton
+        variant="primary"
+        @click="openCreateModal"
+      >
+        Create World
+      </UiBaseButton>
+    </div>
     <div class="grid grid-cols-1 gap-4 mt-4">
       <template v-if="pending">
         <p class="text-secondary-foreground bg-secondary rounded-md px-4 py-2 w-fit mx-auto">Loading ... </p>
@@ -159,7 +188,7 @@ const handleLeaveTeam = async (world: World) => {
               v-if="world.owner.id === auth.currentUser.value?.id"
               class="items-center flex"
               variant="secondary"
-              disabled
+              @click="openEditModal(world)"
             >
               <Icon name="mdi:settings" size="24"/>
             </UiBaseButton>
@@ -174,6 +203,22 @@ const handleLeaveTeam = async (world: World) => {
       v-model="showJoinModal"
       :world="selectedWorld!"
       @joined="handleJoined"
+    />
+
+    <!-- Create World Modal -->
+    <GameCreateEditWorldModal
+      v-model="showCreateModal"
+      mode="create"
+      @success="handleWorldSuccess"
+    />
+
+    <!-- Edit World Modal -->
+    <GameCreateEditWorldModal
+      v-if="selectedWorld !== null"
+      v-model="showEditModal"
+      mode="edit"
+      :world="selectedWorld!"
+      @success="handleWorldSuccess"
     />
   </div>
 </template>

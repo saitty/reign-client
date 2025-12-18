@@ -65,3 +65,17 @@ export interface RegisterRequest {
     username: string;
     password: string;
 }
+
+export interface CreateWorldRequest {
+    slug: string;
+    name: string;
+    boardType: 'SQUARE' | 'HEXAGON';
+    boardSize: number;
+    maxPlayers: number;
+    maxTeams: number;
+    minTeams: number;
+    maxTeamSize: number;
+    minTeamSize: number;
+    allowPlayerTeamCreation: boolean;
+    isPublic: boolean;
+}
