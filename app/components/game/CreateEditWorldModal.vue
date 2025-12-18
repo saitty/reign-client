@@ -19,7 +19,7 @@ const gameApi = useGameApi()
 const formData = ref<CreateWorldRequest>({
   slug: '',
   name: '',
-  boardType: 'SQUARE',
+  boardType: 'HEXAGON',
   boardSize: 10,
   maxPlayers: 4,
   maxTeams: 2,
@@ -60,7 +60,7 @@ const isFormValid = computed(() => {
     formData.value.slug.trim().length >= 3 &&
     formData.value.name.trim().length >= 3 &&
     formData.value.boardSize >= 5 &&
-    formData.value.boardSize <= 100 &&
+    formData.value.boardSize <= 25 &&
     formData.value.maxPlayers >= 2 &&
     formData.value.maxTeams >= 2 &&
     formData.value.minTeams >= 2 &&
@@ -81,7 +81,7 @@ const resetForm = () => {
   formData.value = {
     slug: '',
     name: '',
-    boardType: 'SQUARE',
+    boardType: 'HEXAGON',
     boardSize: 10,
     maxPlayers: 4,
     maxTeams: 2,
@@ -186,21 +186,21 @@ const generateSlug = () => {
         <div class="grid grid-cols-2 gap-2">
           <button
             type="button"
-            @click="formData.boardType = 'SQUARE'"
-            class="p-3 border-2 rounded-lg hover:bg-muted transition-colors"
-            :class="formData.boardType === 'SQUARE' ? 'border-primary bg-muted' : 'border-border'"
-            :disabled="isLoading"
-          >
-            Square Grid
-          </button>
-          <button
-            type="button"
             @click="formData.boardType = 'HEXAGON'"
             class="p-3 border-2 rounded-lg hover:bg-muted transition-colors"
             :class="formData.boardType === 'HEXAGON' ? 'border-primary bg-muted' : 'border-border'"
             :disabled="isLoading"
           >
             Hexagon Grid
+          </button>
+          <button
+            type="button"
+            @click="formData.boardType = 'SQUARE'"
+            class="p-3 border-2 rounded-lg hover:bg-muted transition-colors"
+            :class="formData.boardType === 'SQUARE' ? 'border-primary bg-muted' : 'border-border'"
+            :disabled="isLoading"
+          >
+            Square Grid
           </button>
         </div>
       </div>
@@ -215,7 +215,7 @@ const generateSlug = () => {
           v-model.number="formData.boardSize"
           type="range"
           min="5"
-          max="100"
+          max="25"
           step="1"
           class="w-full"
           :disabled="isLoading"

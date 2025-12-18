@@ -13,8 +13,74 @@ import type { World } from '~~/types/database';
 
 const auth = useAuth()
 const teamColor = useTeamColor()
+const route = useRoute()
+const router = useRouter()
 
-const { data, error, pending, refresh } = useApiFetch<World[]>('/api/worlds')
+// Read filters from URL query parameters
+const searchQuery = computed({
+  get: () => (route.query.s as string) || '',
+  set: (value: string) => updateQuery({ s: value || undefined })
+})
+
+const isPublicFilter = computed({
+  get: () => {
+    const visibility = route.query.visibility as string
+    return visibility || 'all'
+  },
+  set: (value: string) => updateQuery({ visibility: value === 'all' ? undefined : value })
+})
+
+const boardTypeFilter = computed({
+  get: () => {
+    const boardType = route.query.boardType as string
+    return boardType || 'all'
+  },
+  set: (value: string) => updateQuery({ boardType: value === 'all' ? undefined : value })
+})
+
+const hideFullServers = computed({
+  get: () => route.query.hideFull === 'true',
+  set: (value: boolean) => updateQuery({ hideFull: value ? 'true' : undefined })
+})
+
+// Helper function to update query parameters
+const updateQuery = (newParams: Record<string, string | undefined>) => {
+  router.push({
+    query: {
+      ...route.query,
+      ...newParams
+    }
+  })
+}
+
+// Build query params for API call from URL
+const apiQueryParams = computed(() => {
+  const params: Record<string, any> = {}
+
+  if (searchQuery.value.trim()) {
+    params.search = searchQuery.value.trim()
+  }
+
+  if (isPublicFilter.value === 'public') {
+    params.isPublic = true
+  } else if (isPublicFilter.value === 'private') {
+    params.isPublic = false
+  }
+
+  if (boardTypeFilter.value !== 'all') {
+    params.boardType = boardTypeFilter.value
+  }
+
+  if (hideFullServers.value) {
+    params.hideFull = true
+  }
+
+  return params
+})
+
+const { data, error, pending, refresh } = useApiFetch<World[]>('/api/worlds', {
+  query: apiQueryParams
+})
 
 // Modal state
 const showJoinModal = ref(false)
@@ -189,6 +255,70 @@ const handleDeleteWorld = async (world: World) => {
         </UiBaseButton>
       </div>
     </div>
+
+    <!-- Search and Filters -->
+    <UiCard class="p-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Search Input -->
+        <div>
+          <label for="search" class="block text-sm font-medium mb-1">
+            Search
+          </label>
+          <input
+            id="search"
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search worlds..."
+            class="w-full px-3 py-2 border-2 border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+          />
+        </div>
+
+        <!-- Public/Private Filter -->
+        <div>
+          <label for="visibility" class="block text-sm font-medium mb-1">
+            Visibility
+          </label>
+          <select
+            id="visibility"
+            v-model="isPublicFilter"
+            class="w-full px-3 py-2 border-2 border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+          >
+            <option value="all">All</option>
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+          </select>
+        </div>
+
+        <!-- Board Type Filter -->
+        <div>
+          <label for="board-type" class="block text-sm font-medium mb-1">
+            Board Type
+          </label>
+          <select
+            id="board-type"
+            v-model="boardTypeFilter"
+            class="w-full px-3 py-2 border-2 border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+          >
+            <option value="all">All</option>
+            <option value="HEXAGON">Hexagon</option>
+            <option value="SQUARE">Square</option>
+          </select>
+        </div>
+
+        <!-- Hide Full Servers Checkbox -->
+        <div class="flex items-end md:pb-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              v-model="hideFullServers"
+              type="checkbox"
+              class="w-4 h-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
+            />
+            <span class="text-sm font-medium">Hide Full Servers</span>
+          </label>
+        </div>
+      </div>
+    </UiCard>
+
     <div class="grid grid-cols-1 gap-4 mt-4">
       <template v-if="pending">
         <p class="text-secondary-foreground bg-secondary rounded-md px-4 py-2 w-fit mx-auto">Loading ... </p>
@@ -196,7 +326,7 @@ const handleDeleteWorld = async (world: World) => {
       <template v-else-if="error">
         <p class="text-destructive-foreground bg-destructive rounded-md px-4 py-2 w-fit mx-auto">Error loading worlds.</p>
       </template>
-      <template v-else-if="data">
+      <template v-else-if="data && data.length > 0">
         <UiCard v-for="world in data" :key="world.id" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
           <div>
             <div class="flex items-center gap-2">
@@ -303,6 +433,9 @@ const handleDeleteWorld = async (world: World) => {
             </UiBaseButton>
           </div>
         </UiCard>
+      </template>
+      <template v-else-if="data && data.length === 0">
+        <p class="text-secondary-foreground bg-secondary rounded-md px-4 py-2 w-fit mx-auto">No worlds found.</p>
       </template>
     </div>
 

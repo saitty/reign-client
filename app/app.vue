@@ -15,7 +15,7 @@ useHead({
     }
   ],
   bodyAttrs: {
-    class: 'bg-background text-foreground'
+    class: 'bg-background text-foreground accent-primary'
   }
 })
 </script>
