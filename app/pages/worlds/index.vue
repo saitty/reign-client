@@ -14,7 +14,40 @@ import type { World } from '~~/types/database';
 const auth = useAuth()
 const teamColor = useTeamColor()
 
-const { data, error, pending, refresh } = useApiFetch<World[]>('/api/worlds')
+// Filter state
+const searchQuery = ref('')
+const isPublicFilter = ref<string>('all') // 'all', 'public', 'private'
+const boardTypeFilter = ref<string>('all') // 'all', 'HEXAGON', 'SQUARE'
+const hideFullServers = ref(false)
+
+// Build query params for API call
+const queryParams = computed(() => {
+  const params: Record<string, any> = {}
+
+  if (searchQuery.value.trim()) {
+    params.search = searchQuery.value.trim()
+  }
+
+  if (isPublicFilter.value === 'public') {
+    params.isPublic = true
+  } else if (isPublicFilter.value === 'private') {
+    params.isPublic = false
+  }
+
+  if (boardTypeFilter.value !== 'all') {
+    params.boardType = boardTypeFilter.value
+  }
+
+  if (hideFullServers.value) {
+    params.hideFull = true
+  }
+
+  return params
+})
+
+const { data, error, pending, refresh } = useApiFetch<World[]>('/api/worlds', {
+  query: queryParams
+})
 
 // Modal state
 const showJoinModal = ref(false)
@@ -189,6 +222,70 @@ const handleDeleteWorld = async (world: World) => {
         </UiBaseButton>
       </div>
     </div>
+
+    <!-- Search and Filters -->
+    <UiCard class="p-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Search Input -->
+        <div>
+          <label for="search" class="block text-sm font-medium mb-1">
+            Search
+          </label>
+          <input
+            id="search"
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search worlds..."
+            class="w-full px-3 py-2 border-2 border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+          />
+        </div>
+
+        <!-- Public/Private Filter -->
+        <div>
+          <label for="visibility" class="block text-sm font-medium mb-1">
+            Visibility
+          </label>
+          <select
+            id="visibility"
+            v-model="isPublicFilter"
+            class="w-full px-3 py-2 border-2 border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+          >
+            <option value="all">All</option>
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+          </select>
+        </div>
+
+        <!-- Board Type Filter -->
+        <div>
+          <label for="board-type" class="block text-sm font-medium mb-1">
+            Board Type
+          </label>
+          <select
+            id="board-type"
+            v-model="boardTypeFilter"
+            class="w-full px-3 py-2 border-2 border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+          >
+            <option value="all">All</option>
+            <option value="HEXAGON">Hexagon</option>
+            <option value="SQUARE">Square</option>
+          </select>
+        </div>
+
+        <!-- Hide Full Servers Checkbox -->
+        <div class="flex items-end">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              v-model="hideFullServers"
+              type="checkbox"
+              class="w-4 h-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
+            />
+            <span class="text-sm font-medium">Hide Full Servers</span>
+          </label>
+        </div>
+      </div>
+    </UiCard>
+
     <div class="grid grid-cols-1 gap-4 mt-4">
       <template v-if="pending">
         <p class="text-secondary-foreground bg-secondary rounded-md px-4 py-2 w-fit mx-auto">Loading ... </p>
